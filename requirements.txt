@@ -6,3 +6,6 @@ python-dotenv
 httpx
 PyPDF2
 beautifulsoup4
+youtube-transcript-api
+google-generativeai
+jinja2

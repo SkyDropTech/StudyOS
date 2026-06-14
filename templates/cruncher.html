@@ -213,6 +213,66 @@
                 text.classList.replace('text-white', 'text-gray-300');
             }
         }
+        // Function to handle the Crunch button click
+document.querySelector('button.w-full.bg-accent').addEventListener('click', async function(e) {
+    const button = e.currentTarget;
+    const originalText = button.innerHTML;
+    
+    // Change button to loading state
+    button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing with AI...';
+    button.disabled = true;
+
+    try {
+        // 1. Check which tab is active
+        const activeTab = document.querySelector('.tab-content.block').id;
+        
+        // 2. Gather what the user wants to generate (Summary, Flashcards, etc)
+        const selectedOptions = [];
+        document.querySelectorAll('.toggle-card input:checked').forEach(checkbox => {
+            selectedOptions.push(checkbox.nextElementSibling.nextElementSibling.innerText.toLowerCase());
+        });
+
+        // 3. Handle YouTube Submission
+        if (activeTab === 'content-youtube') {
+            const youtubeUrl = document.querySelector('#content-youtube input').value;
+            
+            if (!youtubeUrl) {
+                alert("Please enter a YouTube URL");
+                button.innerHTML = originalText;
+                button.disabled = false;
+                return;
+            }
+
+            // Send data to our FastAPI backend
+            const response = await fetch('/api/crunch/youtube', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: youtubeUrl,
+                    options: selectedOptions
+                })
+            });
+
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                console.log("AI Output:", result.data);
+                alert("AI processing complete! Check your browser console to see the JSON output.");
+                // In the future, we will redirect them to the Study Hub here
+            } else {
+                alert("Error: " + result.message);
+            }
+        }
+        
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Something went wrong communicating with the server.");
+    } finally {
+        // Restore button state
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }
+});
     </script>
 </body>
 </html>
