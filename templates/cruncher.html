@@ -111,10 +111,11 @@
 
                             <div id="content-pdf" class="tab-content mb-6 hidden">
                                 <label class="text-sm font-bold text-gray-300 mb-2 block">Upload PDF or Document</label>
-                                <div class="w-full border-2 border-dashed border-white/10 rounded-xl p-10 flex flex-col items-center justify-center bg-darkBg hover:border-accent/50 hover:bg-white/5 transition-all cursor-pointer">
+                                <div class="w-full border-2 border-dashed border-white/10 rounded-xl p-10 flex flex-col items-center justify-center bg-darkBg hover:border-accent/50 hover:bg-white/5 transition-all cursor-pointer" onclick="document.getElementById('pdf-upload').click()">
                                     <div class="w-16 h-16 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-3xl mb-4"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-                                    <p class="text-white font-bold mb-1">Click to upload or drag and drop</p>
+                                    <p id="pdf-filename" class="text-white font-bold mb-1">Click to upload or drag and drop</p>
                                     <p class="text-xs text-gray-500">PDF, DOCX, or TXT (Max 50MB)</p>
+                                    <input type="file" id="pdf-upload" class="hidden" accept=".pdf,.txt" onchange="document.getElementById('pdf-filename').innerText = this.files[0].name">
                                 </div>
                             </div>
 
@@ -238,37 +239,50 @@ document.querySelector('button.w-full.bg-accent').addEventListener('click', asyn
             
             if (!youtubeUrl) {
                 alert("Please enter a YouTube URL");
-                button.innerHTML = originalText;
-                button.disabled = false;
-                return;
+                throw new Error("Empty URL");
             }
-
-            // Send data to our FastAPI backend
-            const response = await fetch('/api/crunch/youtube', {
+            
+            response = await fetch('/api/crunch/youtube', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    url: youtubeUrl,
-                    options: selectedOptions
-                })
+                body: JSON.stringify({ url: youtubeUrl, options: selectedOptions })
             });
-
-            const result = await response.json();
+        } 
+        else if (activeTab === 'content-pdf') {
+            const fileInput = document.getElementById('pdf-upload');
+            if (!fileInput.files.length) { alert("Please select a file to upload."); throw new Error("No file"); }
             
-            if (result.status === 'success') {
-                console.log("AI Output:", result.data);
-                alert("AI processing complete! Check your browser console to see the JSON output.");
-                // In the future, we will redirect them to the Study Hub here
-            } else {
-                alert("Error: " + result.message);
-            }
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            formData.append("options", JSON.stringify(selectedOptions));
+
+            response = await fetch('/api/crunch/pdf', {
+                method: 'POST',
+                body: formData
+            });
         }
+        else if (activeTab === 'content-code') {
+            const textContent = document.querySelector('#content-code textarea').value;
+            if (!textContent.trim()) { alert("Please paste some text or code."); throw new Error("Empty text"); }
+            
+            response = await fetch('/api/crunch/text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: textContent, options: selectedOptions })
+            });
+        }
+
+        const result = await response.json();
         
+        if (result.status === 'success') {
+            console.log("AI Output:", result.data);
+            alert("Success! Check your browser console to see the JSON output.");
+        } else {
+            alert("Error: " + result.message);
+        }
     } catch (error) {
         console.error("Error:", error);
-        alert("Something went wrong communicating with the server.");
     } finally {
-        // Restore button state
         button.innerHTML = originalText;
         button.disabled = false;
     }

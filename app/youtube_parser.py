@@ -18,7 +18,9 @@ def get_youtube_transcript(url: str) -> str:
         if not video_id:
             return "Error: Invalid YouTube URL"
         
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+        # FIX: The latest API uses an instantiated object and fetch()
+        api_instance = YouTubeTranscriptApi()
+        transcript_list = api_instance.fetch(video_id)
         
         # Combine all the text pieces into one giant string
         full_text = " ".join([chunk['text'] for chunk in transcript_list])
