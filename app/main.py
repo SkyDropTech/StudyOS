@@ -1,189 +1,221 @@
 # app/main.py
+"""
+StudySync AI Engine - Main FastAPI Application
+Modular architecture with routes, services, and models
+MongoDB with GridFS for file storage
+"""
 
 import os
-import json
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 import uvicorn
 from bson.objectid import ObjectId
-from fastapi import (
-    FastAPI,
-    Request,
-    HTTPException,
-)
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
-# Import DB connection
-from app.database import notebook_collection
+# Import database and services
+from app.database import (
+    folders_collection,
+    files_collection,
+    get_grid_fs,
+    get_gridfs_service,
+    get_notebook_service,
+    create_indexes
+)
 
-# Import custom modules
-from app.youtube_parser import get_youtube_transcript
-from app.pdf_processor import extract_text_from_pdf
-from app.ai_engine import generate_study_materials
+# Import routes
+from app.routes import notebook, auth, files as files_routes
 
-app = FastAPI(title="StudySync AI Engine")
+# =====================================================
+# FastAPI Setup
+# =====================================================
+
+app = FastAPI(
+    title="StudySync AI Engine",
+    description="A MongoDB-based notebook system with file storage",
+    version="1.0.0"
+)
+
+# =====================================================
+# Setup Base Directories
+# =====================================================
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = BASE_DIR / "templates"
+STATIC_DIR = BASE_DIR / "static"
 
+# Setup Jinja2 Templates
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 
+# Setup Static Files
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # =====================================================
-# Notebook Schemas
+# Global Variables for Services
 # =====================================================
 
-class NotebookItem(BaseModel):
-    type: str  # "folder" or "file"
-    name: str
-    parent_id: Optional[str] = None
-    content: str = ""
-    user_id: str = "default_user"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+grid_fs_service = None
+notebook_service = None
 
 
-class NotebookItemUpdate(BaseModel):
-    name: Optional[str] = None
-    content: Optional[str] = None
+async def init_services():
+    """Initialize services on startup"""
+    global grid_fs_service, notebook_service
+    
+    from app.services.gridfs_service import GridFSService
+    from app.services.notebook_service import NotebookService
+    
+    grid_fs_service = GridFSService(get_grid_fs())
+    notebook_service = NotebookService(
+        folders_collection,
+        files_collection,
+        grid_fs_service
+    )
+    
+    # Create database indexes
+    try:
+        await create_indexes()
+        print("✅ Database indexes created")
+    except Exception as e:
+        print(f"⚠️  Index creation warning: {str(e)}")
 
 
 # =====================================================
-# Frontend Routes
+# Startup & Shutdown Events
+# =====================================================
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on application startup"""
+    print("🚀 Starting StudySync AI Engine...")
+    await init_services()
+    print("✅ Services initialized")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on application shutdown"""
+    print("🛑 Shutting down StudySync AI Engine...")
+
+
+# =====================================================
+# Frontend Routes (HTML Templates)
 # =====================================================
 
 @app.get("/", response_class=HTMLResponse)
 async def read_dashboard(request: Request):
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html",
-    )
+    """Main dashboard"""
+    return templates.TemplateResponse(request=request, name="index.html")
 
 
 @app.get("/cruncher", response_class=HTMLResponse)
 async def read_cruncher(request: Request):
-    return templates.TemplateResponse(
-        request=request,
-        name="cruncher.html",
-    )
+    """PDF Cruncher page"""
+    return templates.TemplateResponse(request=request, name="cruncher.html")
 
 
 @app.get("/hub", response_class=HTMLResponse)
 async def read_hub(request: Request):
-    return templates.TemplateResponse(
-        request=request,
-        name="hub.html",
-    )
+    """Hub/Dashboard page"""
+    return templates.TemplateResponse(request=request, name="hub.html")
 
 
 @app.get("/hub/notebook", response_class=HTMLResponse)
 async def read_notebook(request: Request):
-    return templates.TemplateResponse(
-        request=request,
-        name="notebook.html",
-    )
+    """Notebook editor page"""
+    return templates.TemplateResponse(request=request, name="notebook.html")
 
 
 @app.get("/command", response_class=HTMLResponse)
 async def read_command(request: Request):
-    return templates.TemplateResponse(
-        request=request,
-        name="command.html",
-    )
+    """Command center page"""
+    return templates.TemplateResponse(request=request, name="command.html")
 
 
 # =====================================================
-# Notebook API Routes
+# API Routes Registration
 # =====================================================
 
-@app.post("/api/notebook/items")
-async def create_item(item: NotebookItem):
-    result = await notebook_collection.insert_one(item.model_dump())
+# Register route modules
+app.include_router(auth.router)
+app.include_router(notebook.router)
+app.include_router(files_routes.router)
 
+
+# =====================================================
+# Health Check Endpoint
+# =====================================================
+
+@app.get("/api/health")
+async def health_check():
+    """Check API health status"""
     return {
-        "status": "success",
-        "id": str(result.inserted_id),
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "StudySync AI Engine"
     }
 
 
-@app.get("/api/notebook/items/{user_id}")
-async def get_items(user_id: str):
-    cursor = notebook_collection.find({"user_id": user_id})
-    items = await cursor.to_list(length=1000)
+# =====================================================
+# Root Info Endpoint
+# =====================================================
 
-    for item in items:
-        item["_id"] = str(item["_id"])
-
+@app.get("/api/info")
+async def api_info():
+    """Get API information"""
     return {
-        "status": "success",
-        "items": items,
+        "name": "StudySync AI Engine",
+        "version": "1.0.0",
+        "database": "MongoDB (MainProjectsDB)",
+        "storage": "GridFS",
+        "endpoints": {
+            "auth": "/api/auth",
+            "notebook": "/api/notebook",
+            "files": "/api/files"
+        }
     }
 
 
-@app.put("/api/notebook/items/{item_id}")
-async def update_item(
-    item_id: str,
-    update_data: NotebookItemUpdate,
-):
-    update_fields = {}
+# =====================================================
+# Error Handlers
+# =====================================================
 
-    if update_data.name is not None:
-        update_fields["name"] = update_data.name
-
-    if update_data.content is not None:
-        update_fields["content"] = update_data.content
-
-    try:
-        await notebook_collection.update_one(
-            {"_id": ObjectId(item_id)},
-            {"$set": update_fields},
-        )
-
-        return {
-            "status": "success",
-        }
-
-    except Exception:
-        raise HTTPException(
-            status_code=400,
-            detail="DB Error",
-        )
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Custom HTTP exception handler"""
+    return {
+        "error": exc.detail,
+        "status_code": exc.status_code,
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
 
-@app.delete("/api/notebook/items/{item_id}")
-async def delete_item(item_id: str):
-    try:
-        await notebook_collection.delete_one(
-            {"_id": ObjectId(item_id)}
-        )
-
-        # Delete all children if the item is a folder
-        await notebook_collection.delete_many(
-            {"parent_id": item_id}
-        )
-
-        return {
-            "status": "success",
-        }
-
-    except Exception:
-        raise HTTPException(
-            status_code=400,
-            detail="DB Error",
-        )
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    """General exception handler"""
+    print(f"❌ Unhandled exception: {str(exc)}")
+    return {
+        "error": "Internal server error",
+        "status_code": 500,
+        "timestamp": datetime.utcnow().isoformat()
+    }
 
 
 # =====================================================
-# Run Server
+# Development Server
 # =====================================================
 
 if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
-        host="127.0.0.1",
+        host="0.0.0.0",
         port=8000,
         reload=True,
+        log_level="info"
     )

@@ -15,7 +15,6 @@
                         darkCard: '#111827',
                         accent: '#6D5EF7',
                         success: '#22C55E',
-                        warning: '#F59E0B',
                         danger: '#EF4444',
                         editorBg: '#05070A'
                     },
@@ -36,9 +35,11 @@
         ::-webkit-scrollbar-thumb:hover { background: #374151; }
         textarea { tab-size: 4; outline: none; }
         .hidden-item { display: none !important; }
+        .drag-over { background: rgba(255,255,255,0.1) !important; border: 1px dashed #6D5EF7 !important; }
+        .tree-level { padding-left: 1rem; border-left: 1px solid rgba(255,255,255,0.05); margin-left: 0.5rem; }
     </style>
 </head>
-<body class="bg-darkBg text-gray-100 font-sans h-screen flex overflow-hidden selection:bg-accent selection:text-white">
+<body class="bg-darkBg text-gray-100 font-sans h-screen flex overflow-hidden selection:bg-accent selection:text-white" onclick="closeAllMenus()">
 
     <aside class="w-64 bg-darkCard border-r border-white/5 flex-col justify-between hidden xl:flex shrink-0 z-20">
         <div class="p-6 flex flex-col gap-8">
@@ -48,25 +49,14 @@
                 </div>
                 StudySync
             </div>
-
             <nav class="flex flex-col gap-2">
-                <a href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
-                    <i class="fa-solid fa-border-all w-5"></i> Dashboard
-                </a>
-                <a href="/cruncher" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
-                    <i class="fa-solid fa-bolt w-5"></i> Content Cruncher
-                </a>
-                <a href="/hub" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
-                    <i class="fa-solid fa-layer-group w-5"></i> Study Hub
-                </a>
+                <a href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-border-all w-5"></i> Dashboard</a>
+                <a href="/cruncher" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-bolt w-5"></i> Content Cruncher</a>
+                <a href="/hub" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-layer-group w-5"></i> Study Hub</a>
                 <div class="ml-10 border-l border-white/10 pl-4 py-2 flex flex-col gap-2">
-                    <a href="/hub/notebook" class="text-sm text-accent font-bold flex items-center gap-2">
-                        <i class="fa-solid fa-angle-right text-xs"></i> Code Notebook
-                    </a>
+                    <a href="/hub/notebook" class="text-sm text-accent font-bold flex items-center gap-2"><i class="fa-solid fa-angle-right text-xs"></i> Code Notebook</a>
                 </div>
-                <a href="/command" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
-                    <i class="fa-solid fa-calendar-check w-5"></i> Command Center
-                </a>
+                <a href="/command" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-calendar-check w-5"></i> Command Center</a>
             </nav>
         </div>
     </aside>
@@ -74,15 +64,10 @@
     <main class="flex-1 flex flex-col h-full overflow-hidden relative">
         <header class="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-darkBg/80 backdrop-blur-md z-20">
             <div class="flex items-center gap-3 text-gray-400 text-sm">
-                <a href="/hub" class="hover:text-white transition-colors">Study Hub</a>
-                <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                <span class="text-white font-medium">Notebook</span>
+                <a href="/hub" class="hover:text-white transition-colors">Study Hub</a><i class="fa-solid fa-chevron-right text-[10px]"></i><span class="text-white font-medium">Notebook</span>
             </div>
             <div class="flex items-center gap-6">
-                <button class="text-gray-400 hover:text-white"><i class="fa-regular fa-bell text-xl"></i></button>
-                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-accent to-purple-500 p-[2px]">
-                    <img src="https://ui-avatars.com/api/?name=Rishikesh&background=111827&color=fff" class="w-full h-full rounded-full border border-darkCard">
-                </div>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-accent to-purple-500 p-[2px]"><img src="https://ui-avatars.com/api/?name=Rishikesh&background=111827&color=fff" class="w-full h-full rounded-full border border-darkCard"></div>
             </div>
         </header>
 
@@ -90,79 +75,53 @@
             <div class="flex justify-between items-center mb-6 shrink-0">
                 <div>
                     <h1 class="text-2xl font-bold text-white flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-accent/20 text-accent flex items-center justify-center text-sm border border-accent/30"><i class="fa-solid fa-code"></i></div>
-                        Code Vault
+                        <div class="w-8 h-8 rounded-lg bg-accent/20 text-accent flex items-center justify-center text-sm border border-accent/30"><i class="fa-solid fa-code"></i></div> Code Vault
                     </h1>
-                    <p class="text-gray-400 text-sm mt-2">Organize and store your DSA logic safely in the cloud.</p>
-                </div>
-                <div class="flex gap-3">
-                    <button onclick="createItem('folder')" class="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold py-2 px-4 rounded-xl transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-folder-plus"></i> New Folder
-                    </button>
-                    <button onclick="createItem('file')" class="bg-accent hover:bg-indigo-500 text-white text-xs font-bold py-2 px-4 rounded-xl shadow-[0_0_15px_rgba(109,94,247,0.3)] transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-file-circle-plus"></i> New File
-                    </button>
                 </div>
             </div>
 
             <div class="flex-1 bg-darkCard rounded-2xl border border-white/5 flex flex-col md:flex-row overflow-hidden shadow-2xl min-h-0">
                 
-                <div class="w-full md:w-64 bg-darkCard border-r border-white/5 flex flex-col shrink-0">
-                    <div class="p-4 text-xs font-bold text-gray-500 tracking-widest uppercase border-b border-white/5 flex justify-between items-center bg-darkBg/50">
+                <div class="w-full md:w-72 bg-darkCard border-r border-white/5 flex flex-col shrink-0 select-none">
+                    <div class="p-4 text-xs font-bold text-gray-500 tracking-widest uppercase border-b border-white/5 flex justify-between items-center bg-darkBg/50 group">
                         <span>Explorer</span>
-                        <i class="fa-solid fa-ellipsis hover:text-white cursor-pointer"></i>
+                        <div class="flex gap-2 text-gray-400">
+                            <i class="fa-solid fa-file-circle-plus hover:text-white cursor-pointer" onclick="createItem('file', null)" title="New File in Root"></i>
+                            <i class="fa-solid fa-folder-plus hover:text-white cursor-pointer" onclick="createItem('folder', null)" title="New Folder in Root"></i>
+                        </div>
                     </div>
                     
-                    <div id="explorer-list" class="flex-1 overflow-y-auto p-2 custom-scrollbar text-sm text-gray-300">
-                        <div class="text-center text-gray-600 mt-4 text-xs">Loading items...</div>
+                    <div id="explorer-root" class="flex-1 overflow-y-auto p-2 custom-scrollbar text-sm text-gray-300"
+                         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, null)">
+                        <div class="text-center text-gray-600 mt-4 text-xs">Loading files...</div>
                     </div>
                 </div>
 
                 <div class="flex-1 flex flex-col bg-editorBg min-w-0">
-                    
                     <div id="empty-state" class="flex-1 flex flex-col items-center justify-center text-gray-600">
                         <i class="fa-solid fa-laptop-code text-5xl mb-4 opacity-30"></i>
                         <p class="text-sm font-medium">Select a file from the explorer to view code</p>
                     </div>
 
                     <div id="editor-state" class="flex-1 flex flex-col hidden-item h-full">
-                        
                         <div class="flex border-b border-white/5 bg-darkCard shrink-0">
                             <div class="flex items-center gap-2 px-4 py-3 bg-editorBg border-t-2 border-accent text-sm text-white min-w-max">
                                 <i id="tab-icon" class="fa-brands fa-python text-yellow-400"></i>
                                 <span id="tab-filename">filename.py</span>
                                 <i class="fa-solid fa-xmark text-gray-500 hover:text-white ml-2 text-xs cursor-pointer" onclick="closeEditor()"></i>
                             </div>
-                            
                             <div class="ml-auto flex items-center gap-2 px-4">
-                                <button onclick="saveFile()" id="save-btn" class="text-xs font-bold text-accent bg-accent/10 hover:bg-accent/20 border border-accent/20 px-3 py-1.5 rounded-lg transition-colors hidden-item flex items-center gap-1">
-                                    <i class="fa-solid fa-floppy-disk"></i> Save
+                                <button onclick="copyCode()" id="copy-btn" class="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                                    <i class="fa-regular fa-copy"></i> Copy
                                 </button>
-                                <button onclick="deleteActiveItem()" class="text-xs text-gray-400 hover:text-danger px-2 transition-colors" title="Delete File">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
+                                <button onclick="saveFile()" id="save-btn" class="text-xs font-bold text-accent bg-accent/10 border border-accent/20 px-3 py-1.5 rounded-lg transition-colors hidden-item flex items-center gap-1"><i class="fa-solid fa-floppy-disk"></i> Save</button>
                             </div>
                         </div>
 
                         <div class="flex-1 relative flex min-h-0 bg-editorBg">
-                            <div id="line-numbers" class="w-12 bg-darkCard border-r border-white/5 text-gray-600 text-right pr-3 pt-4 select-none font-mono text-sm leading-relaxed overflow-hidden shrink-0">
-                                1
-                            </div>
+                            <div id="line-numbers" class="w-12 bg-darkCard border-r border-white/5 text-gray-600 text-right pr-3 pt-4 font-mono text-sm leading-relaxed overflow-hidden shrink-0">1</div>
                             <textarea id="code-editor" class="flex-1 h-full w-full bg-transparent text-gray-200 font-mono text-sm p-4 leading-relaxed custom-scrollbar border-none resize-none" onscroll="syncScroll()" oninput="handleInput()"></textarea>
                         </div>
-
-                        <div class="h-32 border-t border-white/5 bg-darkBg p-3 font-mono text-xs flex flex-col shrink-0">
-                            <div class="flex justify-between items-center mb-2 text-gray-500 uppercase tracking-widest text-[10px] font-bold">
-                                <span>Saved Outputs / Terminal View</span>
-                                <i class="fa-solid fa-broom hover:text-white cursor-pointer"></i>
-                            </div>
-                            <div class="flex-1 overflow-y-auto custom-scrollbar text-gray-400">
-                                <span class="text-success">➜</span> <span class="text-accent">~/StudyOS/Notebook</span> python3 <span id="term-filename">file.py</span>
-                                <br><br>
-                                <span class="text-gray-600">File loaded successfully. Awaiting execution context.</span>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
@@ -170,167 +129,262 @@
     </main>
 
     <script>
-        const USER_ID = "default_user";
-        let items = [];
-        let activeItem = null;
-        let isUnsaved = false;
+        // USER CONFIG
+        const USER_ID = 'Skydrop'; // replace or fetch from /api/auth/current-user when auth implemented
 
-        document.addEventListener('DOMContentLoaded', fetchItems);
+        // State
+        let folders = [];
+        let files = [];
+        let activeFile = null;
+        let expandedFolders = new Set();
+        let dragPayload = null; // { id, type }
 
-        async function fetchItems() {
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAll();
+        });
+
+        async function loadAll() {
+            await Promise.all([loadFolders(), loadFiles()]);
+            renderExplorer();
+        }
+
+        async function loadFolders() {
             try {
-                const res = await fetch(`/api/notebook/items/${USER_ID}`);
-                const data = await res.json();
-                if(data.status === 'success') {
-                    items = data.items;
-                    renderExplorer();
-                }
-            } catch (err) {
-                console.error("Error fetching items", err);
+                const res = await fetch(`/api/notebook/folders?user_id=${USER_ID}`);
+                folders = res.ok ? await res.json() : [];
+            } catch (e) { console.error('loadFolders', e); folders = []; }
+        }
+
+        async function loadFiles() {
+            try {
+                const res = await fetch(`/api/notebook/files?user_id=${USER_ID}`);
+                files = res.ok ? await res.json() : [];
+            } catch (e) { console.error('loadFiles', e); files = []; }
+        }
+
+        // BUILD TREE
+        function buildTree() {
+            const nodes = {};
+            folders.forEach(f => nodes[f._id] = { ...f, type: 'folder', children: [] });
+            files.forEach(f => nodes[f._id] = { ...f, type: 'file', parentId: f.folderId || null });
+
+            // attach children
+            Object.values(nodes).forEach(n => {
+                const parentId = n.type === 'folder' ? n.parentId || n.parentId : n.parentId || n.parentId;
+                // folders store parentId as parentId, files store folderId as folderId (serialized to folderId)
+            });
+
+            // Explicit assembly: find roots and attach
+            const lookup = {};
+            Object.values(nodes).forEach(n => { lookup[n._id] = { ...n, children: [] }; });
+            const tree = [];
+            Object.values(lookup).forEach(n => {
+                const parentKey = n.type === 'folder' ? n.parentId : (n.folderId || n.parentId);
+                if (parentKey && lookup[parentKey]) lookup[parentKey].children.push(n);
+                else tree.push(n);
+            });
+            return tree;
+        }
+
+        function iconFor(node) {
+            if (node.type === 'folder') return expandedFolders.has(node._id) ? 'fa-solid fa-folder-open text-accent' : 'fa-solid fa-folder text-accent';
+            const ext = (node.name || '').split('.').pop().toLowerCase();
+            switch(ext) {
+                case 'py': return 'fa-brands fa-python text-yellow-400';
+                case 'js': return 'fa-brands fa-js text-yellow-300';
+                case 'html': return 'fa-brands fa-html5 text-orange-500';
+                case 'css': return 'fa-brands fa-css3-alt text-blue-500';
+                case 'md': return 'fa-brands fa-markdown text-gray-300';
+                default: return 'fa-solid fa-file-code text-gray-500';
             }
         }
 
         function renderExplorer() {
-            const list = document.getElementById('explorer-list');
-            list.innerHTML = '';
-            
-            const folders = items.filter(i => i.type === 'folder');
-            const files = items.filter(i => i.type === 'file');
-
-            // Render Folders
-            folders.forEach(folder => {
-                const div = document.createElement('div');
-                div.className = 'flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg cursor-pointer text-gray-400 group transition-colors mb-1';
-                div.innerHTML = `
-                    <i class="fa-solid fa-folder text-accent"></i> 
-                    <span class="font-medium text-gray-300 group-hover:text-white">${folder.name}</span>
-                    <i class="fa-solid fa-trash text-[10px] ml-auto opacity-0 group-hover:opacity-100 hover:text-danger" onclick="event.stopPropagation(); deleteItem('${folder._id}')"></i>
-                `;
-                list.appendChild(div);
-            });
-
-            // Render Files
-            files.forEach(file => {
-                const isPy = file.name.endsWith('.py');
-                const isPdf = file.name.endsWith('.pdf');
-                let iconClass = 'fa-solid fa-file-lines text-gray-500';
-                if(isPy) iconClass = 'fa-brands fa-python text-yellow-400';
-                if(isPdf) iconClass = 'fa-solid fa-file-pdf text-red-400';
-
-                const isActive = activeItem && activeItem._id === file._id;
-                const bgClass = isActive ? 'bg-accent/10 border border-accent/20 text-accent' : 'hover:bg-white/5 text-gray-400';
-
-                const div = document.createElement('div');
-                // Added pl-6 for visual hierarchy under folders conceptually
-                div.className = `flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ml-4 mb-1 ${bgClass}`;
-                div.onclick = () => openFile(file, iconClass);
-                div.innerHTML = `
-                    <i class="${iconClass}"></i> 
-                    <span class="${isActive ? 'text-white' : 'hover:text-gray-200'}">${file.name}</span>
-                `;
-                list.appendChild(div);
-            });
+            const root = document.getElementById('explorer-root');
+            root.innerHTML = '';
+            const tree = buildTree();
+            tree.forEach(n => root.appendChild(nodeElement(n)));
         }
 
-        async function createItem(type) {
-            const defaultName = type === 'folder' ? 'New_Folder' : 'script.py';
-            const name = prompt(`Enter ${type} name:`, defaultName);
-            if (!name) return;
+        function nodeElement(node) {
+            const container = document.createElement('div');
+            const isFolder = node.type === 'folder';
 
-            const payload = {
-                type: type,
-                name: name,
-                user_id: USER_ID,
-                content: type === 'file' ? '# Write code here\n' : ''
-            };
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2 p-1.5 px-2 rounded-lg cursor-pointer transition-colors group mb-0.5 border border-transparent hover:bg-white/5 text-gray-400';
+            row.draggable = true;
+            row.ondragstart = (e) => { dragPayload = { id: node._id, type: node.type }; e.dataTransfer.effectAllowed = 'move'; };
+            row.ondragend = () => { dragPayload = null };
 
-            const res = await fetch('/api/notebook/items', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if(res.ok) fetchItems();
+            if (isFolder) {
+                row.ondragover = (e) => { e.preventDefault(); row.classList.add('drag-over'); };
+                row.ondragleave = () => row.classList.remove('drag-over');
+                row.ondrop = async (e) => { e.preventDefault(); row.classList.remove('drag-over'); await handleDrop(node._id); };
+                row.onclick = (e) => { e.stopPropagation(); toggleFolder(node._id); };
+            } else {
+                row.onclick = (e) => { e.stopPropagation(); openFile(node._id); };
+            }
+
+            row.innerHTML = `
+                <i class="${iconFor(node)} text-sm w-4 text-center shrink-0"></i>
+                <span class="truncate text-sm flex-1" data-id="label-${node._id}">${escapeHtml(node.name)}</span>
+                <div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 ml-auto shrink-0 transition-opacity">
+                    ${isFolder ? `<i class="fa-solid fa-file-circle-plus hover:text-white px-1 text-xs" title="New File" onclick="event.stopPropagation(); beginCreate('file','${node._id}')"></i>
+                                 <i class="fa-solid fa-folder-plus hover:text-white px-1 text-xs" title="New Folder" onclick="event.stopPropagation(); beginCreate('folder','${node._id}')"></i>` : ''}
+                    <i class="fa-solid fa-ellipsis px-1 hover:text-white text-xs" onclick="event.stopPropagation(); showMenu(event, '${node._id}')"></i>
+                </div>
+            `;
+
+            container.appendChild(row);
+
+            if (isFolder && expandedFolders.has(node._id)) {
+                const childWrap = document.createElement('div'); childWrap.className = 'tree-level';
+                (node.children || []).forEach(c => childWrap.appendChild(nodeElement(c)));
+                container.appendChild(childWrap);
+            }
+            return container;
         }
 
-        function openFile(file, iconClass) {
-            activeItem = file;
-            isUnsaved = false;
-            
-            document.getElementById('empty-state').classList.add('hidden-item');
-            document.getElementById('editor-state').classList.remove('hidden-item');
-            document.getElementById('save-btn').classList.add('hidden-item');
-            
-            document.getElementById('tab-filename').innerText = file.name;
-            document.getElementById('term-filename').innerText = file.name;
-            document.getElementById('tab-icon').className = iconClass;
-            
-            const editor = document.getElementById('code-editor');
-            editor.value = file.content;
-            
-            renderExplorer(); // Refresh highlights
-            updateLineNumbers();
+        function toggleFolder(id) { if (expandedFolders.has(id)) expandedFolders.delete(id); else expandedFolders.add(id); renderExplorer(); }
+
+        // INLINE CREATE
+        function beginCreate(type, parentId) {
+            const tempId = 'tmp-' + Math.random().toString(36).slice(2,9);
+            const root = document.getElementById('explorer-root');
+            const inputRow = document.createElement('div');
+            inputRow.className = 'flex items-center gap-2 p-1.5 px-2 rounded-lg bg-white/5 text-gray-200';
+            inputRow.innerHTML = `<i class="fa-solid fa-pen-to-square w-4"></i><input id="create-input-${tempId}" class="bg-transparent outline-none flex-1" value="${type==='folder'?'New Folder':'Untitled.py'}" />`;
+            if (parentId) {
+                // ensure parent is expanded and render so we can attach under its children
+                expandedFolders.add(parentId);
+                renderExplorer();
+                const parentLabel = document.querySelector(`[data-id=label-${parentId}]`);
+                const parentContainer = parentLabel ? parentLabel.closest('div') : null;
+                const childWrap = parentContainer ? parentContainer.querySelector('.tree-level') : null;
+                if (childWrap) childWrap.prepend(inputRow);
+                else root.prepend(inputRow);
+            } else {
+                root.prepend(inputRow);
+            }
+            const input = document.getElementById(`create-input-${tempId}`);
+            input.focus(); input.select();
+            input.onkeydown = async (e) => { if (e.key === 'Enter') { await finishCreate(type, parentId, input.value); inputRow.remove(); } if (e.key === 'Escape') inputRow.remove(); };
+            input.onblur = async () => { await finishCreate(type, parentId, input.value); inputRow.remove(); };
         }
 
-        function closeEditor() {
-            activeItem = null;
-            document.getElementById('empty-state').classList.remove('hidden-item');
-            document.getElementById('editor-state').classList.add('hidden-item');
-            renderExplorer();
+        async function finishCreate(type, parentId, name) {
+            if (!name || !name.trim()) return;
+            try {
+                if (type === 'folder') {
+                    const q = new URLSearchParams({ user_id: USER_ID, name, parent_id: parentId || '' });
+                    await fetch(`/api/notebook/folders?${q.toString()}`, { method: 'POST' });
+                } else {
+                    const body = { name, content: '# New file\n', folder_id: parentId || null };
+                    await fetch(`/api/notebook/files?user_id=${USER_ID}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+                }
+            } catch (e) { console.error('finishCreate', e); }
+            await loadAll();
         }
 
-        function handleInput() {
-            isUnsaved = true;
-            document.getElementById('save-btn').classList.remove('hidden-item');
-            updateLineNumbers();
+        // MENU
+        function showMenu(evt, id) {
+            closeAllMenus();
+            // simple inline menu using prompt-less UI
+            const menu = document.createElement('div'); menu.className='absolute z-50 bg-darkCard border rounded shadow p-2 text-xs';
+            menu.style.left = evt.clientX + 'px'; menu.style.top = evt.clientY + 'px';
+            menu.innerHTML = `<div style="padding:6px;cursor:pointer" onclick="startRename('${id}')">Rename</div><div style="padding:6px;cursor:pointer" onclick="startDelete('${id}')">Delete</div>`;
+            document.body.appendChild(menu);
+            const remover = () => { menu.remove(); document.removeEventListener('click', remover); };
+            document.addEventListener('click', remover);
+        }
+
+        function closeAllMenus() { document.querySelectorAll('.context-menu').forEach(el => el.remove()); }
+
+        // RENAME (inline)
+        function startRename(id) {
+            // find label span
+            const label = document.querySelector(`[data-id=label-${id}]`);
+            if(!label) return;
+            const old = label.innerText;
+            const input = document.createElement('input'); input.value = old; input.className='bg-transparent outline-none w-full';
+            label.replaceWith(input); input.focus(); input.select();
+            input.onblur = async () => { await finishRename(id, input.value); input.replaceWith(label); label.innerText = input.value; };
+            input.onkeydown = async (e) => { if(e.key==='Enter'){ input.blur(); } if(e.key==='Escape'){ input.replaceWith(label); } };
+        }
+
+        async function finishRename(id, newName) {
+            if(!newName) return;
+            // determine if id is folder or file
+            const isFolder = folders.find(f => f._id === id);
+            try {
+                if (isFolder) {
+                    const q = new URLSearchParams({ user_id: USER_ID });
+                    await fetch(`/api/notebook/folders/${id}?${q.toString()}`, { method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: newName }) });
+                } else {
+                    const q = new URLSearchParams({ user_id: USER_ID });
+                    await fetch(`/api/notebook/files/${id}?${q.toString()}`, { method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ name: newName }) });
+                }
+            } catch (e) { console.error('finishRename', e); }
+            await loadAll();
+        }
+
+        async function startDelete(id) {
+            if(!confirm('Delete this item?')) return;
+            const isFolder = folders.find(f => f._id === id);
+            try {
+                if (isFolder) await fetch(`/api/notebook/folders/${id}?user_id=${USER_ID}`, { method: 'DELETE' });
+                else await fetch(`/api/notebook/files/${id}?user_id=${USER_ID}`, { method: 'DELETE' });
+            } catch (e) { console.error('startDelete', e); }
+            await loadAll();
+        }
+
+        // DROP HANDLER
+        async function handleDrop(targetFolderId) {
+            if(!dragPayload) return;
+            const { id, type } = dragPayload;
+            try {
+                if (type === 'file') {
+                    await fetch(`/api/notebook/files/${id}?user_id=${USER_ID}`, { method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ folder_id: targetFolderId || '' }) });
+                } else if (type === 'folder') {
+                    await fetch(`/api/notebook/folders/${id}?user_id=${USER_ID}`, { method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ parent_id: targetFolderId || '' }) });
+                }
+            } catch (e) { console.error('handleDrop', e); }
+            await loadAll();
+        }
+
+        // FILE OPEN & EDIT
+        async function openFile(fileId) {
+            try {
+                const metaRes = await fetch(`/api/notebook/files/${fileId}?user_id=${USER_ID}`);
+                const meta = await metaRes.json();
+                const contentRes = await fetch(`/api/notebook/files/${fileId}/content?user_id=${USER_ID}`);
+                const contentJson = await contentRes.json();
+                activeFile = meta;
+                document.getElementById('empty-state').classList.add('hidden-item');
+                document.getElementById('editor-state').classList.remove('hidden-item');
+                document.getElementById('tab-filename').innerText = meta.name;
+                document.getElementById('tab-icon').className = iconFor({ type: 'file', name: meta.name });
+                document.getElementById('code-editor').value = contentJson.content || '';
+                updateLineNumbers();
+            } catch (e) { console.error('openFile', e); }
         }
 
         async function saveFile() {
-            if(!activeItem) return;
+            if(!activeFile) return;
             const content = document.getElementById('code-editor').value;
-
-            const res = await fetch(`/api/notebook/items/${activeItem._id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: content })
-            });
-
-            if(res.ok) {
-                activeItem.content = content;
-                isUnsaved = false;
-                
-                const btn = document.getElementById('save-btn');
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved';
-                setTimeout(() => {
-                    btn.classList.add('hidden-item');
-                    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save';
-                }, 1500);
-            }
+            try {
+                await fetch(`/api/notebook/files/${activeFile._id}?user_id=${USER_ID}`, { method: 'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ content }) });
+                const btn = document.getElementById('save-btn'); btn.innerHTML = '<i class="fa-solid fa-check"></i> Saved'; setTimeout(()=>{ btn.classList.add('hidden-item'); btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save'; }, 1200);
+            } catch (e) { console.error('saveFile', e); }
         }
 
-        async function deleteItem(id) {
-            if(!confirm("Delete this item permanently?")) return;
-            const res = await fetch(`/api/notebook/items/${id}`, { method: 'DELETE' });
-            if(res.ok) {
-                if(activeItem && activeItem._id === id) closeEditor();
-                fetchItems();
-            }
-        }
+        function handleInput() { document.getElementById('save-btn').classList.remove('hidden-item'); updateLineNumbers(); }
 
-        function deleteActiveItem() {
-            if(activeItem) deleteItem(activeItem._id);
-        }
-
-        // Editor UI Syncing
-        function syncScroll() {
-            document.getElementById('line-numbers').scrollTop = document.getElementById('code-editor').scrollTop;
-        }
-
-        function updateLineNumbers() {
-            const lines = document.getElementById('code-editor').value.split('\n').length || 1;
-            let numbers = '';
-            for(let i=1; i<=lines; i++) numbers += i + '<br>';
-            document.getElementById('line-numbers').innerHTML = numbers;
-        }
+        // UTIL
+        function updateLineNumbers() { const lines = document.getElementById('code-editor').value.split('\n').length || 1; document.getElementById('line-numbers').innerHTML = Array.from({length: lines}, (_, i) => i+1).join('<br>'); }
+        function syncScroll(){ document.getElementById('line-numbers').scrollTop = document.getElementById('code-editor').scrollTop; }
+        function closeEditor(){ activeFile=null; document.getElementById('empty-state').classList.remove('hidden-item'); document.getElementById('editor-state').classList.add('hidden-item'); }
+        function escapeHtml(unsafe){ return unsafe ? unsafe.replace(/[&<"'`=\/]/g, function(s){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'})[s]; }) : ''; }
     </script>
 </body>
 </html>
