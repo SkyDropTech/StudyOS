@@ -1,4 +1,3 @@
-# app/pdf_processor.py
 import PyPDF2
 import io
 
