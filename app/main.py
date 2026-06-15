@@ -1,6 +1,6 @@
 # app/main.py
 """
-StudySync AI Engine - Main FastAPI Application
+StudyOS AI Engine - Main FastAPI Application
 Modular architecture with routes, services, and models
 MongoDB with GridFS for file storage
 """
@@ -29,14 +29,14 @@ from app.database import (
 )
 
 # Import routes
-from app.routes import notebook, auth, files as files_routes
+from app.routes import notebook, auth, files as files_routes, crunch as crunch_routes
 
 # =====================================================
 # FastAPI Setup
 # =====================================================
 
 app = FastAPI(
-    title="StudySync AI Engine",
+    title="StudyOS AI Engine",
     description="A MongoDB-based notebook system with file storage",
     version="1.0.0"
 )
@@ -93,7 +93,7 @@ async def init_services():
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on application startup"""
-    print("🚀 Starting StudySync AI Engine...")
+    print("🚀 Starting StudyOS AI Engine...")
     await init_services()
     print("✅ Services initialized")
 
@@ -101,7 +101,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on application shutdown"""
-    print("🛑 Shutting down StudySync AI Engine...")
+    print("🛑 Shutting down StudyOS AI Engine...")
 
 
 # =====================================================
@@ -146,6 +146,7 @@ async def read_command(request: Request):
 app.include_router(auth.router)
 app.include_router(notebook.router)
 app.include_router(files_routes.router)
+app.include_router(crunch_routes.router)
 
 
 # =====================================================
@@ -158,7 +159,7 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "service": "StudySync AI Engine"
+        "service": "StudyOS AI Engine"
     }
 
 
@@ -170,7 +171,7 @@ async def health_check():
 async def api_info():
     """Get API information"""
     return {
-        "name": "StudySync AI Engine",
+        "name": "StudyOS AI Engine",
         "version": "1.0.0",
         "database": "MongoDB (MainProjectsDB)",
         "storage": "GridFS",

@@ -1,6 +1,6 @@
 # app/example_usage.py
 """
-Example usage of the StudySync Notebook API
+Example usage of the StudyOS Notebook API
 Shows how to interact with the MongoDB-backed notebook system
 """
 

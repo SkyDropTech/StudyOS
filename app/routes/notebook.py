@@ -17,9 +17,9 @@ router = APIRouter(prefix="/api/notebook", tags=["notebook"])
 async def get_notebook_service():
     """Dependency to get notebook service"""
     from app.services.notebook_service import NotebookService
-    from app.database import folders_collection, files_collection, grid_fs_service
+    from app.database import folders_collection, files_collection, get_gridfs_service
     
-    return NotebookService(folders_collection, files_collection, grid_fs_service)
+    return NotebookService(folders_collection, files_collection, get_gridfs_service())
 
 
 # ==================== FOLDER ENDPOINTS ====================

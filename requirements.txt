@@ -6,7 +6,7 @@ python-dotenv
 httpx
 PyPDF2
 beautifulsoup4
-youtube-transcript-api
+youtube-transcript-api>=1.0.0
 google-genai
 jinja2
 python-multipart
