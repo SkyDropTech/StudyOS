@@ -1,83 +1,95 @@
-# StudyOS
+# StudyOS 🧠
 
-An AI-powered study assistant with a FastAPI backend and MongoDB (Atlas) storage.
+![StudyOS Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-## Features
+**StudyOS** is an AI-powered, full-stack application designed to streamline information ingestion and study workflows. By leveraging automated parsing for multiple media formats and a modular AI engine, StudyOS transforms raw data into structured, interactive study materials.
 
-- **Content Cruncher** — Upload a PDF, paste text, or enter a YouTube URL and generate summaries, flashcards, quizzes, and mind maps using Gemini AI.
-- **Study Hub (Notebook)** — Create, organize, and edit rich-text notebooks stored in MongoDB GridFS.
-- **Command Center** — Planner/calendar UI.
-- **Dashboard** — Overview and quick access.
+---
 
-## Setup
+## 🌟 Core Features
 
-1. **Install dependencies**
+| Feature Domain | Description | Relevant Module(s) |
+| :--- | :--- | :--- |
+| **Multi-Modal Ingestion** | Parses and extracts raw text/data from PDFs and YouTube videos seamlessly. | `pdf_processor.py`[cite: 1], `youtube_parser.py`[cite: 1] |
+| **AI Analysis Engine** | Summarizes, crunches, and formats complex data into digestible study guides. | `ai_engine.py`[cite: 1] |
+| **Advanced File Storage** | Manages large, unstructured document uploads using scalable database architecture. | `gridfs_service.py`[cite: 1] |
+| **Interactive Workspace** | Built-in user interfaces including a central Hub, Cruncher tool, and Notebooks. | `templates/*.html`[cite: 1] |
+| **Secure Routing & Auth** | Manages user access, session security, and internal API routing. | `routes/auth.py`[cite: 1] |
 
-```bash
-pip install -r requirements.txt
-```
+---
 
-2. **Configure environment**
+## 🛠 Technology Stack
 
-Edit `.env` and fill in your keys:
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Backend Framework** | Python (FastAPI / Flask) | Core application logic, RESTful API routing, and system architecture. |
+| **Database Management** | MongoDB & GridFS | Handling structured user data alongside complex, large document storage. |
+| **Frontend Rendering** | HTML5, CSS3, JavaScript | Server-side rendered interfaces delivering the user workspace. |
+| **Deployment & CI/CD** | Vercel | Cloud hosting and continuous deployment pipelines (`vercel.json`)[cite: 1]. |
 
-```
-GEMINI_API_KEY=your_google_gemini_api_key      # Required for AI features
-MONGODB_URI=your_mongodb_atlas_connection_string
-```
+---
 
-Get a free Gemini API key at https://aistudio.google.com/app/apikey
+## 📂 Project Architecture
 
-3. **Run the server**
+The repository is modularized to separate core business logic, API routing, and frontend views.
 
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
+| Directory / File | Type | Description |
+| :--- | :--- | :--- |
+| `app/models/` | **Directory** | Contains database schemas and data models[cite: 1]. |
+| `app/routes/` | **Directory** | API endpoint controllers (`auth.py`, `files.py`, `crunch.py`, `notebook.py`)[cite: 1]. |
+| `app/services/` | **Directory** | Core business logic and database interactions (`notebook_service.py`)[cite: 1]. |
+| `app/utils/` | **Directory** | Shared helper modules (`serializer.py`, `objectid.py`)[cite: 1]. |
+| `app/ai_engine.py` | **Core Logic** | Orchestrates AI processing, parsing, and text generation[cite: 1]. |
+| `app/pdf_processor.py` | **Data Parsing** | Handles extraction of text and metadata from PDF documents[cite: 1]. |
+| `app/youtube_parser.py`| **Data Parsing** | Fetches and parses transcripts from YouTube URLs[cite: 1]. |
+| `app/main.py` | **Entry Point** | Application initialization, middleware setup, and server config[cite: 1]. |
+| `templates/` | **Directory** | User interface files (`hub.html`, `cruncher.html`, `notebook.html`)[cite: 1]. |
+| `vercel.json` | **Config** | Vercel deployment routing and configuration specifications[cite: 1]. |
 
-4. **Open the app**
+---
 
-Visit http://localhost:8000
+## 🚀 Installation & Setup
 
-## Deploying to Vercel
+Follow these steps to get a local development environment running.
 
-This project can be deployed to Vercel using the Python runtime. A `vercel.json` file is included and routes all requests to the FastAPI app in `app/main.py`.
+| Step | Action | Command / Details |
+| :---: | :--- | :--- |
+| **1** | **Clone Repository** | `git clone https://github.com/skydroptech/studyos.git`<br>`cd studyos` |
+| **2** | **Virtual Environment**| `python -m venv venv`<br>**Mac/Linux:** `source venv/bin/activate`<br>**Windows:** `venv\Scripts\activate` |
+| **3** | **Dependencies** | `pip install -r requirements.txt`[cite: 1] |
+| **4** | **Configuration** | Create a `.env` file in the root directory. (See *Environment Variables* below). |
+| **5** | **Run Application** | `python app/main.py`[cite: 1]<br>*Server will boot on localhost (typically port 8000).* |
 
-Quick steps:
+### Environment Variables
 
-1. Install the Vercel CLI: `npm i -g vercel`
-2. Login and link the project: `vercel login` then `vercel`
-3. When prompted, select the project settings. Vercel will use `vercel.json` and `requirements.txt`.
+Ensure the following variables are configured in your `.env` file prior to launching the application:
 
-Notes:
+| Variable | Requirement | Description | Example |
+| :--- | :---: | :--- | :--- |
+| `MONGO_URI` | **Required** | Connection string for your local or cloud MongoDB database. | `mongodb://localhost:27017/studyos` |
+| `SECRET_KEY` | **Required** | Cryptographic key for session and token security. | `your_super_secret_string` |
+| `AI_API_KEY` | **Required** | API key for the core AI processing provider. | `sk-abc123def456...` |
 
-- Ensure environment variables (`GEMINI_API_KEY`, `MONGODB_URI`, etc.) are configured in the Vercel dashboard under the project Settings -> Environment Variables.
-- Static files in `/static` and templates in `/templates` are bundled with the deployment and served by the function.
-- The app is exposed by the serverless function; no `uvicorn` command is required on Vercel.
+---
 
-## Project Structure
+## 📖 Project Documentation
 
-```
-StudyOS/
-├── app/
-│   ├── main.py              # FastAPI app entry point
-│   ├── database.py          # MongoDB connection & GridFS
-│   ├── ai_engine.py         # Gemini AI integration
-│   ├── pdf_processor.py     # PDF text extraction
-│   ├── youtube_parser.py    # YouTube transcript extraction
-│   ├── routes/
-│   │   ├── crunch.py        # /api/crunch/* — AI content processing
-│   │   ├── notebook.py      # /api/notebook/* — Notebook CRUD
-│   │   ├── auth.py          # /api/auth/*
-│   │   └── files.py         # /api/files/*
-│   ├── services/
-│   │   ├── notebook_service.py
-│   │   └── gridfs_service.py
-│   └── models/ / utils/
-├── templates/               # Jinja2 HTML templates
-│   ├── index.html           # Dashboard
-│   ├── cruncher.html        # Content Cruncher
-│   ├── hub.html             # Study Hub
-│   ├── notebook.html        # Notebook editor
-│   └── command.html         # Command Center
-└── .env                     # Environment variables (fill in your keys)
-```
+For deeper technical insights, please refer to our internal documentation files:
+
+| Resource | Description | Link |
+| :--- | :--- | :--- |
+| **API Documentation** | Complete endpoint references, request parameters, and payload schemas. | [`API_DOCUMENTATION.md`](./API_DOCUMENTATION.md)[cite: 1] |
+| **Quick Start Guide** | Extended user setup and foundational operational guides. | [`QUICK_START.md`](./QUICK_START.md)[cite: 1] |
+| **Restructure Notes** | Details on recent architectural shifts and code refactoring. | [`RESTRUCTURE_SUMMARY.md`](./RESTRUCTURE_SUMMARY.md)[cite: 1] |
+
+---
+
+## 🤝 Contributing & License
+
+Contributions, issues, and feature requests are welcome! 
+
+Distributed under the **MIT License**. See the [`LICENSE`](./LICENSE) file for more information[cite: 1].
+
+**Maintainer:** [Your Name / skydroptech] - [your.email@example.com]
