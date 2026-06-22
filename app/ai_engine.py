@@ -1,7 +1,8 @@
 # app/ai_engine.py
 """
-AI Engine - supports Anthropic Claude and Google Gemini API keys.
-Auto-detects key type from prefix.
+AI Engine for StudyOS Content Cruncher.
+Primary provider: NVIDIA NIM (OpenAI-compatible endpoint, free-tier friendly).
+Falls back to Anthropic Claude or Google Gemini if those keys are configured instead.
 """
 import os
 import json
@@ -9,8 +10,33 @@ import urllib.request
 import urllib.error
 
 
-def _call_anthropic(api_key: str, prompt: str) -> dict:
-    """Call Anthropic Claude API"""
+# ── NVIDIA NIM (OpenAI-compatible) ───────────────────────────────────────────
+def _call_nvidia(api_key: str, prompt: str) -> str:
+    """Call NVIDIA NIM chat-completions endpoint (OpenAI-compatible REST API)."""
+    payload = json.dumps({
+        "model": "meta/llama-3.1-70b-instruct",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.4,
+        "top_p": 0.9,
+        "max_tokens": 4000,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://integrate.api.nvidia.com/v1/chat/completions",
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
+        return body["choices"][0]["message"]["content"].strip()
+
+
+# ── Anthropic Claude (fallback) ──────────────────────────────────────────────
+def _call_anthropic(api_key: str, prompt: str) -> str:
     payload = json.dumps({
         "model": "claude-sonnet-4-6",
         "max_tokens": 4000,
@@ -32,8 +58,8 @@ def _call_anthropic(api_key: str, prompt: str) -> dict:
         return body["content"][0]["text"].strip()
 
 
+# ── Google Gemini (fallback) ─────────────────────────────────────────────────
 def _call_gemini(api_key: str, prompt: str) -> str:
-    """Call Google Gemini REST API directly"""
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
@@ -54,11 +80,10 @@ def _call_gemini(api_key: str, prompt: str) -> str:
 
 
 def _parse_json_response(raw_text: str) -> dict:
-    """Parse JSON from AI response, stripping any markdown fences"""
+    """Parse JSON from AI response, stripping any markdown fences."""
     text = raw_text.strip()
     if text.startswith("```"):
         parts = text.split("```")
-        # Find the JSON block
         for part in parts:
             part = part.strip()
             if part.startswith("json"):
@@ -66,24 +91,28 @@ def _parse_json_response(raw_text: str) -> dict:
             if part.startswith("{"):
                 text = part
                 break
+    # Trim anything before the first '{' in case the model added stray preamble text
+    if "{" in text and not text.strip().startswith("{"):
+        text = text[text.index("{"):]
     return json.loads(text)
 
 
 def generate_study_materials(content_text: str, options: list) -> dict:
-    # Resolve API key — check all env vars
-    api_key = (
-        os.getenv("ANTHROPIC_API_KEY") or
-        os.getenv("GEMINI_API_KEY") or
-        os.getenv("OPENAI_API_KEY") or
-        ""
-    ).strip()
+    """
+    Generate study materials (summary / flashcards / quiz / mind map) from content_text.
+    Tries NVIDIA NIM first (NVIDIA_API_KEY), then falls back to Anthropic or Gemini
+    if those keys are set instead.
+    """
+    nvidia_key = os.getenv("NVIDIA_API_KEY", "").strip()
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    gemini_key = os.getenv("GEMINI_API_KEY", "").strip()
 
-    if not api_key or api_key in ("your_gemini_api_key_here", "your_anthropic_api_key_here"):
+    if not any([nvidia_key, anthropic_key, gemini_key]):
         return {
             "error": (
                 "No valid API key configured. "
-                "Set ANTHROPIC_API_KEY (starts with sk-ant-) or "
-                "GEMINI_API_KEY (starts with AIza) in your .env file."
+                "Set NVIDIA_API_KEY (starts with nvapi-), ANTHROPIC_API_KEY (starts with sk-ant-) "
+                "or GEMINI_API_KEY in your .env file."
             )
         }
 
@@ -114,25 +143,33 @@ The JSON must contain these keys:
 CONTENT:
 {content_text[:25000]}"""
 
-    try:
-        # Auto-detect key type
-        if api_key.startswith("sk-ant-") or api_key.startswith("sk-"):
-            raw = _call_anthropic(api_key, prompt)
-        else:
-            # Try Gemini (AIza... keys or other)
-            raw = _call_gemini(api_key, prompt)
+    # Try providers in order of preference: NVIDIA -> Anthropic -> Gemini
+    last_error = None
 
-        return _parse_json_response(raw)
-
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode("utf-8", errors="ignore")
+    if nvidia_key:
         try:
-            err_json = json.loads(err_body)
-            msg = err_json.get("error", {}).get("message", err_body[:200])
-        except Exception:
-            msg = err_body[:200]
-        return {"error": f"API error {e.code}: {msg}"}
-    except json.JSONDecodeError as e:
-        return {"error": f"AI returned malformed JSON. Please try again. Details: {str(e)}"}
-    except Exception as e:
-        return {"error": str(e)}
+            raw = _call_nvidia(nvidia_key, prompt)
+            return _parse_json_response(raw)
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode("utf-8", errors="ignore")
+            last_error = f"NVIDIA API error {e.code}: {err_body[:300]}"
+        except json.JSONDecodeError as e:
+            last_error = f"NVIDIA returned malformed JSON: {str(e)}"
+        except Exception as e:
+            last_error = f"NVIDIA API error: {str(e)}"
+
+    if anthropic_key:
+        try:
+            raw = _call_anthropic(anthropic_key, prompt)
+            return _parse_json_response(raw)
+        except Exception as e:
+            last_error = f"Anthropic API error: {str(e)}"
+
+    if gemini_key:
+        try:
+            raw = _call_gemini(gemini_key, prompt)
+            return _parse_json_response(raw)
+        except Exception as e:
+            last_error = f"Gemini API error: {str(e)}"
+
+    return {"error": last_error or "All configured AI providers failed."}

@@ -29,7 +29,10 @@ from app.database import (
 )
 
 # Import routes
-from app.routes import notebook, auth, files as files_routes, crunch as crunch_routes
+from app.routes import (
+    notebook, auth, files as files_routes, crunch as crunch_routes,
+    history as history_routes, tasks as tasks_routes, smartnotebook as smartnotebook_routes
+)
 
 # =====================================================
 # FastAPI Setup
@@ -126,9 +129,29 @@ async def read_hub(request: Request):
     return templates.TemplateResponse(request=request, name="hub.html")
 
 
+@app.get("/todo", response_class=HTMLResponse)
+async def read_todo(request: Request):
+    """Daily To-Do list manager"""
+    return templates.TemplateResponse(request=request, name="todo.html")
+
+
+@app.get("/hub/notebooks/new", response_class=HTMLResponse)
+async def read_notebook_create(request: Request):
+    """Create-a-notebook page: pick a title, color, and icon"""
+    return templates.TemplateResponse(request=request, name="notebook-create.html")
+
+
+@app.get("/hub/notebooks/{notebook_id}", response_class=HTMLResponse)
+async def read_notebook_view(request: Request, notebook_id: str):
+    """Smart Notebook view: folders + files/links/notes with full CRUD"""
+    return templates.TemplateResponse(
+        request=request, name="notebook-view.html", context={"notebook_id": notebook_id}
+    )
+
+
 @app.get("/hub/notebook", response_class=HTMLResponse)
 async def read_notebook(request: Request):
-    """Notebook editor page"""
+    """Legacy code notebook editor page (kept for backward compatibility)"""
     return templates.TemplateResponse(request=request, name="notebook.html")
 
 
@@ -147,6 +170,9 @@ app.include_router(auth.router)
 app.include_router(notebook.router)
 app.include_router(files_routes.router)
 app.include_router(crunch_routes.router)
+app.include_router(history_routes.router)
+app.include_router(tasks_routes.router)
+app.include_router(smartnotebook_routes.router)
 
 
 # =====================================================

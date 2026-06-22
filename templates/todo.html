@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List - StudyOS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#090B14',
+                        darkCard: '#111827',
+                        accent: '#6D5EF7',
+                        success: '#22C55E',
+                        warning: '#F59E0B',
+                        danger: '#EF4444',
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+        .checkbox-ring { transition: all .15s ease; }
+        .task-row.completed .task-title { text-decoration: line-through; color: #4b5563; }
+        .task-row.completed .task-notes { text-decoration: line-through; color: #374151; }
+        @keyframes popIn { 0% { transform: translateY(-6px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+        .pop-in { animation: popIn .18s ease-out; }
+        .modal-backdrop { backdrop-filter: blur(4px); }
+        .priority-pill[data-active="true"] { box-shadow: 0 0 0 2px currentColor inset; }
+    </style>
+</head>
+<body class="bg-darkBg text-gray-100 font-sans h-screen flex overflow-hidden selection:bg-accent selection:text-white">
+
+    <aside class="w-64 bg-darkCard border-r border-white/5 flex-col justify-between hidden xl:flex shrink-0">
+        <div class="p-6 flex flex-col gap-8">
+            <div class="flex items-center gap-3 text-xl font-bold text-white">
+                <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-white shadow-[0_0_15px_rgba(109,94,247,0.4)]">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                StudyOS
+            </div>
+            <nav class="flex flex-col gap-2">
+                <a href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-border-all w-5"></i> Dashboard</a>
+                <a href="/cruncher" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-bolt w-5"></i> Content Cruncher</a>
+                <a href="/hub" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-layer-group w-5"></i> Study Hub</a>
+                <a href="/todo" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium transition-colors"><i class="fa-solid fa-list-check w-5 text-accent"></i> To-Do List</a>
+                <a href="/command" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-calendar-check w-5"></i> Command Center</a>
+            </nav>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <header class="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-darkBg/80 backdrop-blur-md z-20 shrink-0">
+            <div class="flex items-center gap-3 text-gray-400 text-sm">
+                <a href="/hub" class="hover:text-white transition-colors">Study Hub</a><i class="fa-solid fa-chevron-right text-[10px]"></i><span class="text-white font-medium">To-Do List</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-accent to-purple-500 p-[2px]"><img src="https://ui-avatars.com/api/?name=Rishikesh&background=111827&color=fff" class="w-full h-full rounded-full border border-darkCard"></div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            <div class="max-w-5xl mx-auto">
+
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-lg bg-accent/20 text-accent flex items-center justify-center text-sm border border-accent/30"><i class="fa-solid fa-list-check"></i></div>
+                            To-Do List
+                        </h1>
+                        <p class="text-gray-400 text-sm mt-1">Manage your daily tasks — they'll show up on your Study Hub dashboard too.</p>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="bg-darkCard rounded-2xl p-4 border border-white/5">
+                        <p class="text-xs text-gray-500 mb-1">Total Tasks</p>
+                        <p id="stat-total" class="text-2xl font-bold text-white">–</p>
+                    </div>
+                    <div class="bg-darkCard rounded-2xl p-4 border border-white/5">
+                        <p class="text-xs text-gray-500 mb-1">Pending</p>
+                        <p id="stat-pending" class="text-2xl font-bold text-warning">–</p>
+                    </div>
+                    <div class="bg-darkCard rounded-2xl p-4 border border-white/5">
+                        <p class="text-xs text-gray-500 mb-1">Completed</p>
+                        <p id="stat-completed" class="text-2xl font-bold text-success">–</p>
+                    </div>
+                </div>
+
+                <!-- Add Task -->
+                <div class="bg-darkCard rounded-2xl border border-white/5 p-5 mb-6">
+                    <form id="add-task-form" class="flex flex-col gap-3">
+                        <input id="task-title-input" type="text" placeholder="What do you need to do?" required
+                            class="w-full bg-darkBg border border-white/10 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all placeholder-gray-500">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <input id="task-tag-input" type="text" placeholder="Subject / tag (optional)"
+                                class="flex-1 min-w-[160px] bg-darkBg border border-white/10 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-accent placeholder-gray-500">
+                            <input id="task-due-input" type="date"
+                                class="bg-darkBg border border-white/10 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-accent">
+                            <div class="flex gap-1.5">
+                                <button type="button" data-priority="low" onclick="selectPriority('low')" class="priority-pill text-xs font-bold px-3 py-2 rounded-lg border border-success/30 text-success bg-success/10">Low</button>
+                                <button type="button" data-priority="medium" onclick="selectPriority('medium')" class="priority-pill text-xs font-bold px-3 py-2 rounded-lg border border-warning/30 text-warning bg-warning/10">Medium</button>
+                                <button type="button" data-priority="high" onclick="selectPriority('high')" class="priority-pill text-xs font-bold px-3 py-2 rounded-lg border border-danger/30 text-danger bg-danger/10">High</button>
+                            </div>
+                            <button type="submit" class="ml-auto bg-accent hover:bg-indigo-500 text-white text-sm font-bold py-2.5 px-6 rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-accent/25">
+                                <i class="fa-solid fa-plus"></i> Add Task
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Filter tabs -->
+                <div class="flex items-center gap-2 mb-4">
+                    <button onclick="setFilter('all')" data-filter="all" class="filter-tab text-xs font-bold px-4 py-2 rounded-full border transition-colors">All</button>
+                    <button onclick="setFilter('pending')" data-filter="pending" class="filter-tab text-xs font-bold px-4 py-2 rounded-full border transition-colors">Pending</button>
+                    <button onclick="setFilter('completed')" data-filter="completed" class="filter-tab text-xs font-bold px-4 py-2 rounded-full border transition-colors">Completed</button>
+                </div>
+
+                <!-- Task list -->
+                <div id="task-list" class="flex flex-col gap-2.5"></div>
+
+                <div id="task-empty" class="hidden flex-col items-center justify-center text-center py-16 bg-darkCard/50 border border-dashed border-white/10 rounded-2xl">
+                    <i class="fa-regular fa-circle-check text-4xl mb-4 text-gray-700"></i>
+                    <p class="text-gray-400 font-medium mb-1">Nothing here</p>
+                    <p class="text-xs text-gray-600">Add a task above to get started.</p>
+                </div>
+
+            </div>
+            <div class="h-16"></div>
+        </div>
+    </main>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="hidden fixed inset-0 bg-black/60 modal-backdrop z-50 items-center justify-center p-4">
+        <div class="bg-darkCard border border-white/10 rounded-2xl w-full max-w-md p-6 pop-in">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-white">Edit Task</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="edit-task-form" class="flex flex-col gap-3">
+                <input type="hidden" id="edit-task-id">
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Title</label>
+                    <input id="edit-title" type="text" required class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Notes</label>
+                    <textarea id="edit-notes" rows="3" class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent resize-none"></textarea>
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <label class="text-xs text-gray-500 mb-1 block">Tag</label>
+                        <input id="edit-tag" type="text" class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent">
+                    </div>
+                    <div class="flex-1">
+                        <label class="text-xs text-gray-500 mb-1 block">Due Date</label>
+                        <input id="edit-due" type="date" class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Priority</label>
+                    <div class="flex gap-2">
+                        <button type="button" data-priority="low" onclick="selectEditPriority('low')" class="edit-priority-pill flex-1 text-xs font-bold py-2 rounded-lg border border-success/30 text-success bg-success/10">Low</button>
+                        <button type="button" data-priority="medium" onclick="selectEditPriority('medium')" class="edit-priority-pill flex-1 text-xs font-bold py-2 rounded-lg border border-warning/30 text-warning bg-warning/10">Medium</button>
+                        <button type="button" data-priority="high" onclick="selectEditPriority('high')" class="edit-priority-pill flex-1 text-xs font-bold py-2 rounded-lg border border-danger/30 text-danger bg-danger/10">High</button>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-2">
+                    <button type="button" onclick="deleteFromModal()" class="bg-danger/10 hover:bg-danger/20 border border-danger/30 text-danger text-sm font-bold py-2.5 px-5 rounded-xl transition-colors"><i class="fa-solid fa-trash mr-1"></i> Delete</button>
+                    <button type="submit" class="flex-1 bg-accent hover:bg-indigo-500 text-white text-sm font-bold py-2.5 rounded-xl transition-colors">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const USER_ID = 'Skydrop';
+        let allTasks = [];
+        let currentFilter = 'all';
+        let newTaskPriority = 'medium';
+        let editTaskPriority = 'medium';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setFilter('all');
+            loadTasks();
+        });
+
+        function selectPriority(p) {
+            newTaskPriority = p;
+            document.querySelectorAll('#add-task-form .priority-pill').forEach(btn => {
+                btn.dataset.active = (btn.dataset.priority === p) ? 'true' : 'false';
+                btn.classList.toggle('opacity-40', btn.dataset.priority !== p);
+            });
+        }
+        selectPriority('medium');
+
+        function selectEditPriority(p) {
+            editTaskPriority = p;
+            document.querySelectorAll('.edit-priority-pill').forEach(btn => {
+                btn.dataset.active = (btn.dataset.priority === p) ? 'true' : 'false';
+                btn.classList.toggle('opacity-40', btn.dataset.priority !== p);
+            });
+        }
+
+        function setFilter(f) {
+            currentFilter = f;
+            document.querySelectorAll('.filter-tab').forEach(btn => {
+                const active = btn.dataset.filter === f;
+                btn.className = `filter-tab text-xs font-bold px-4 py-2 rounded-full border transition-colors ${active ? 'bg-accent/20 border-accent/40 text-accent' : 'border-white/10 text-gray-400 hover:text-white hover:border-white/20'}`;
+            });
+            renderTasks();
+        }
+
+        async function loadTasks() {
+            try {
+                const res = await fetch(`/api/tasks?user_id=${USER_ID}`);
+                const json = await res.json();
+                allTasks = json.data || [];
+                renderTasks();
+                updateStats();
+            } catch (e) {
+                console.error('loadTasks', e);
+            }
+        }
+
+        function updateStats() {
+            const total = allTasks.length;
+            const completed = allTasks.filter(t => t.completed).length;
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-completed').textContent = completed;
+            document.getElementById('stat-pending').textContent = total - completed;
+        }
+
+        function renderTasks() {
+            let tasks = allTasks;
+            if (currentFilter === 'pending') tasks = tasks.filter(t => !t.completed);
+            if (currentFilter === 'completed') tasks = tasks.filter(t => t.completed);
+
+            const list = document.getElementById('task-list');
+            const empty = document.getElementById('task-empty');
+
+            if (!tasks.length) {
+                list.innerHTML = '';
+                list.classList.add('hidden');
+                empty.classList.remove('hidden');
+                empty.classList.add('flex');
+                return;
+            }
+            list.classList.remove('hidden');
+            empty.classList.add('hidden');
+            empty.classList.remove('flex');
+
+            const priorityMeta = {
+                high: { dot: 'bg-danger', label: 'High', text: 'text-danger' },
+                medium: { dot: 'bg-warning', label: 'Medium', text: 'text-warning' },
+                low: { dot: 'bg-success', label: 'Low', text: 'text-success' },
+            };
+
+            list.innerHTML = tasks.map(t => {
+                const pm = priorityMeta[t.priority] || priorityMeta.medium;
+                const due = t.dueDate ? formatDate(t.dueDate) : null;
+                return `
+                <div class="task-row pop-in ${t.completed ? 'completed' : ''} flex items-start gap-4 bg-darkCard border border-white/5 hover:border-white/10 rounded-2xl px-5 py-4 transition-colors group">
+                    <button onclick="toggleTask('${t._id}')" class="checkbox-ring mt-0.5 w-6 h-6 rounded-full border-2 ${t.completed ? 'bg-accent border-accent' : 'border-gray-600 hover:border-accent'} flex items-center justify-center shrink-0">
+                        ${t.completed ? '<i class="fa-solid fa-check text-xs text-white"></i>' : ''}
+                    </button>
+                    <div class="flex-1 min-w-0 cursor-pointer" onclick="openEditModal('${t._id}')">
+                        <p class="task-title text-sm font-semibold text-white truncate">${escapeHtml(t.title)}</p>
+                        ${t.notes ? `<p class="task-notes text-xs text-gray-500 mt-0.5 truncate">${escapeHtml(t.notes)}</p>` : ''}
+                        <div class="flex items-center gap-3 mt-2 flex-wrap">
+                            <span class="flex items-center gap-1.5 text-[11px] font-bold ${pm.text}"><span class="w-1.5 h-1.5 rounded-full ${pm.dot}"></span>${pm.label}</span>
+                            ${t.tag ? `<span class="text-[11px] bg-white/5 text-gray-400 px-2 py-0.5 rounded-md">${escapeHtml(t.tag)}</span>` : ''}
+                            ${due ? `<span class="text-[11px] text-gray-500"><i class="fa-regular fa-calendar mr-1"></i>${due}</span>` : ''}
+                        </div>
+                    </div>
+                    <button onclick="openEditModal('${t._id}')" class="text-gray-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-1"><i class="fa-solid fa-pen text-xs"></i></button>
+                </div>`;
+            }).join('');
+        }
+
+        function formatDate(iso) {
+            try {
+                const d = new Date(iso + 'T00:00:00');
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            } catch (e) { return iso; }
+        }
+
+        document.getElementById('add-task-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('task-title-input').value.trim();
+            if (!title) return;
+            const tag = document.getElementById('task-tag-input').value.trim();
+            const due = document.getElementById('task-due-input').value;
+
+            try {
+                await fetch(`/api/tasks?user_id=${USER_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title, priority: newTaskPriority,
+                        tag: tag || null, due_date: due || null,
+                    })
+                });
+                document.getElementById('add-task-form').reset();
+                selectPriority('medium');
+                await loadTasks();
+            } catch (e) { console.error('add task', e); }
+        });
+
+        async function toggleTask(id) {
+            try {
+                await fetch(`/api/tasks/${id}/toggle?user_id=${USER_ID}`, { method: 'PATCH' });
+                await loadTasks();
+            } catch (e) { console.error('toggleTask', e); }
+        }
+
+        function openEditModal(id) {
+            const t = allTasks.find(x => x._id === id);
+            if (!t) return;
+            document.getElementById('edit-task-id').value = t._id;
+            document.getElementById('edit-title').value = t.title || '';
+            document.getElementById('edit-notes').value = t.notes || '';
+            document.getElementById('edit-tag').value = t.tag || '';
+            document.getElementById('edit-due').value = t.dueDate || '';
+            selectEditPriority(t.priority || 'medium');
+            document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('edit-modal').classList.add('flex');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            document.getElementById('edit-modal').classList.remove('flex');
+        }
+
+        document.getElementById('edit-task-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-task-id').value;
+            const title = document.getElementById('edit-title').value.trim();
+            if (!title) return;
+            try {
+                await fetch(`/api/tasks/${id}?user_id=${USER_ID}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title,
+                        notes: document.getElementById('edit-notes').value,
+                        tag: document.getElementById('edit-tag').value,
+                        due_date: document.getElementById('edit-due').value,
+                        priority: editTaskPriority,
+                    })
+                });
+                closeEditModal();
+                await loadTasks();
+            } catch (e) { console.error('save edit', e); }
+        });
+
+        async function deleteFromModal() {
+            const id = document.getElementById('edit-task-id').value;
+            if (!confirm('Delete this task?')) return;
+            try {
+                await fetch(`/api/tasks/${id}?user_id=${USER_ID}`, { method: 'DELETE' });
+                closeEditModal();
+                await loadTasks();
+            } catch (e) { console.error('delete task', e); }
+        }
+
+        document.getElementById('edit-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'edit-modal') closeEditModal();
+        });
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+        }
+    </script>
+</body>
+</html>

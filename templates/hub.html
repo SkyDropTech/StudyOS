@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>  
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
@@ -11,216 +11,848 @@
             theme: {
                 extend: {
                     colors: {
-                        darkBg: '#090B14',
-                        darkCard: '#111827',
+                        darkBg: '#080A12',
+                        darkCard: '#0E1120',
+                        darkCard2: '#131729',
                         accent: '#6D5EF7',
                         success: '#22C55E',
                         warning: '#F59E0B',
                         danger: '#EF4444',
                     },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
                 }
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+        .notebook-card { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+        .notebook-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+
+        @keyframes popIn { 0% { transform: scale(.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .pop-in { animation: popIn .2s ease-out; }
+
+        .task-row.completed .task-title { text-decoration: line-through; color: #4b5563; }
+
+        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 37%, rgba(255,255,255,0.03) 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; }
+        @keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* Modal */
+        .modal-backdrop { backdrop-filter: blur(6px); }
+        .priority-pill[data-active="true"] { box-shadow: 0 0 0 2px currentColor inset; }
+
+        /* No-distraction embedded viewer */
+        #viewer-modal { backdrop-filter: blur(8px); }
+        .color-swatch { cursor: pointer; border: 2px solid transparent; border-radius: 50%; transition: all .15s; }
+        .color-swatch.selected, .color-swatch:hover { border-color: white; transform: scale(1.15); }
+
+        /* Hero gradient */
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(109,94,247,0.12) 0%, rgba(139,92,246,0.06) 40%, rgba(14,17,32,0) 70%);
+        }
+        /* Nav active */
+        .nav-active { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: white; }
     </style>
 </head>
 <body class="bg-darkBg text-gray-100 font-sans h-screen flex overflow-hidden selection:bg-accent selection:text-white">
 
-    <aside class="w-64 bg-darkCard border-r border-white/5 flex-col justify-between hidden xl:flex">
-        <div class="p-6 flex flex-col gap-8">
-            <div class="flex items-center gap-3 text-xl font-bold text-white">
+    <!-- ===================== SIDEBAR ===================== -->
+    <aside class="w-60 bg-darkCard border-r border-white/5 flex-col justify-between hidden xl:flex shrink-0">
+        <div class="p-5 flex flex-col gap-7">
+            <div class="flex items-center gap-2.5 text-lg font-bold text-white pt-1">
                 <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-white shadow-[0_0_15px_rgba(109,94,247,0.4)]">
-                    <i class="fa-solid fa-brain"></i>
+                    <i class="fa-solid fa-brain text-sm"></i>
                 </div>
                 StudyOS
             </div>
-
-            <nav class="flex flex-col gap-2">
-                <a href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
-                    <i class="fa-solid fa-border-all w-5"></i> Dashboard
+            <nav class="flex flex-col gap-1.5">
+                <a href="/" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors text-sm">
+                    <i class="fa-solid fa-border-all w-4"></i> Dashboard
                 </a>
-                <a href="/cruncher" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
-                    <i class="fa-solid fa-bolt w-5"></i> Content Cruncher
+                <a href="/cruncher" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors text-sm">
+                    <i class="fa-solid fa-bolt w-4"></i> Content Cruncher
                 </a>
-                <a href="/hub" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium transition-colors">
-                    <i class="fa-solid fa-layer-group w-5 text-accent"></i> Study Hub
+                <a href="/hub" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl nav-active font-medium text-sm transition-colors">
+                    <i class="fa-solid fa-layer-group w-4 text-accent"></i> Study Hub
                 </a>
-                <a href="/command" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
-                    <i class="fa-solid fa-calendar-check w-5"></i> Command Center
+                <a href="/command" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors text-sm">
+                    <i class="fa-solid fa-calendar-check w-4"></i> Command Center
                 </a>
             </nav>
         </div>
-        <div class="p-6">
-            <div class="bg-gradient-to-br from-accent/20 to-purple-900/20 border border-accent/30 rounded-2xl p-4 relative overflow-hidden">
-                <div class="relative z-10">
-                    <p class="font-bold text-sm mb-1 text-white">Unlock Premium</p>
-                    <p class="text-xs text-gray-400 mb-3">Sync offline mode & mobile access.</p>
-                    <button class="bg-accent text-white text-xs font-bold py-2 px-4 rounded-lg w-full hover:bg-opacity-90 transition-colors">Upgrade Now</button>
-                </div>
+        <div class="p-5">
+            <div class="bg-gradient-to-br from-accent/20 to-purple-900/20 border border-accent/30 rounded-2xl p-4">
+                <p class="font-bold text-sm mb-1 text-white">Unlock Premium</p>
+                <p class="text-xs text-gray-400 mb-3">Sync offline mode & mobile access.</p>
+                <button class="bg-accent text-white text-xs font-bold py-2 px-4 rounded-lg w-full hover:bg-indigo-500 transition-colors">Upgrade Now</button>
             </div>
         </div>
     </aside>
 
+    <!-- ===================== MAIN ===================== -->
     <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-        <header class="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-darkBg/80 backdrop-blur-md z-20">
-            <div class="relative w-full max-w-xl">
-                <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                <input type="text" placeholder="Search notes, PDFs, YouTube, or Ask AI..." class="w-full bg-darkCard border border-white/10 rounded-full py-2.5 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all placeholder-gray-500">
+
+        <!-- Header — clean, no todo clutter -->
+        <header class="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-darkBg/80 backdrop-blur-md z-20 shrink-0">
+            <div>
+                <h1 class="text-base font-bold text-white">Study Hub</h1>
+                <p class="text-[11px] text-gray-500">Your subjects & tools, all in one place.</p>
             </div>
-            <div class="flex items-center gap-6">
-                <button class="text-gray-400 hover:text-white relative"><i class="fa-regular fa-bell text-xl"></i></button>
-                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-accent to-purple-500 p-[2px]">
+            <div class="flex items-center gap-4">
+                <!-- To-Do button in header -->
+                <button onclick="openTodoModal()" class="flex items-center gap-2 bg-accent/10 hover:bg-accent/20 border border-accent/30 text-accent text-xs font-bold py-2 px-4 rounded-xl transition-colors">
+                    <i class="fa-solid fa-list-check"></i> To-Do
+                </button>
+                <button class="text-gray-400 hover:text-white relative">
+                    <i class="fa-regular fa-bell text-lg"></i>
+                </button>
+                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-accent to-purple-500 p-[2px]">
                     <img src="https://ui-avatars.com/api/?name=Rishikesh&background=111827&color=fff" alt="Profile" class="w-full h-full rounded-full border border-darkCard">
                 </div>
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-            
-            <div class="mb-8 flex justify-between items-end">
-                <div>
-                    <h1 class="text-3xl font-bold text-white mb-2">Study Hub 📚</h1>
-                    <p class="text-gray-400">Review your flashcards, generated notes, and test your knowledge.</p>
+        <div class="flex-1 overflow-y-auto">
+
+            <!-- ===================== HERO WELCOME BANNER ===================== -->
+            <div class="hero-gradient border-b border-white/5 px-8 py-7 relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-96 h-96 bg-accent/8 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center gap-6 relative z-10">
+                    <!-- Welcome text + AI bar -->
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-white mb-1">Welcome back, Rishikesh 👋</h2>
+                        <p class="text-gray-400 text-sm mb-5">Ask me anything about your notes, or jump into your notebooks below.</p>
+                        <div class="bg-darkCard/70 border border-white/10 rounded-xl flex items-center p-2 pl-4 max-w-2xl backdrop-blur-sm">
+                            <input type="text" placeholder="Ask AI about your study material…" class="flex-1 bg-transparent text-sm text-white focus:outline-none placeholder-gray-500">
+                            <div class="flex items-center gap-1">
+                                <button class="text-gray-400 hover:text-white hover:bg-white/5 p-2 rounded-lg transition-all" title="Voice Input"><i class="fa-solid fa-microphone text-sm"></i></button>
+                                <button class="text-gray-400 hover:text-white hover:bg-white/5 p-2 rounded-lg transition-all mr-1" title="Upload Image"><i class="fa-solid fa-camera text-sm"></i></button>
+                                <button class="bg-accent hover:bg-indigo-500 text-white font-semibold py-2 px-5 rounded-lg shadow-lg shadow-accent/25 transition-all text-sm">Ask AI</button>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-3 flex-wrap">
+                            <button class="text-xs bg-white/5 hover:bg-white/10 border border-white/5 px-3 py-1.5 rounded-full text-gray-400 transition-colors">Explain AVL Trees</button>
+                            <button class="text-xs bg-white/5 hover:bg-white/10 border border-white/5 px-3 py-1.5 rounded-full text-gray-400 transition-colors">Summarize last week's notes</button>
+                            <button class="text-xs bg-white/5 hover:bg-white/10 border border-white/5 px-3 py-1.5 rounded-full text-gray-400 transition-colors">Quiz me on OS concepts</button>
+                        </div>
+                    </div>
+                    <!-- Quick stats -->
+                    <div class="flex gap-4 shrink-0">
+                        <div class="bg-darkCard/60 border border-white/5 rounded-2xl p-4 text-center min-w-[90px]">
+                            <p class="text-2xl font-bold text-white" id="stat-notebooks">–</p>
+                            <p class="text-[11px] text-gray-500 mt-1">Notebooks</p>
+                        </div>
+                        <div class="bg-darkCard/60 border border-white/5 rounded-2xl p-4 text-center min-w-[90px]">
+                            <p class="text-2xl font-bold text-warning" id="stat-tasks">–</p>
+                            <p class="text-[11px] text-gray-500 mt-1">Tasks Due</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex gap-3">
-                    <a href="/hub/notebook" class="bg-accent/20 hover:bg-accent/30 border border-accent/30 text-accent text-sm font-medium py-2 px-4 rounded-xl transition-colors flex items-center shadow-[0_0_15px_rgba(109,94,247,0.2)]">
-                        <i class="fa-solid fa-terminal mr-2"></i> Code Notebook
+            </div>
+
+            <!-- ===================== NOTEBOOKS SECTION ===================== -->
+            <div class="px-8 py-7 max-w-7xl mx-auto w-full">
+                <div class="flex justify-between items-end mb-5">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-accent text-sm"></i> My Notebooks
+                        </h2>
+                        <p class="text-[11px] text-gray-500 mt-0.5">Save PDFs, slides, links, and notes — all organized by subject.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="openViewerModal()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white text-xs font-semibold py-2 px-4 rounded-xl transition-colors">
+                            <i class="fa-solid fa-play text-accent"></i> Study Now
+                        </button>
+                        <a href="/hub/notebooks/new" class="bg-accent hover:bg-indigo-500 text-white text-xs font-bold py-2 px-5 rounded-xl transition-colors flex items-center shadow-lg shadow-accent/20">
+                            <i class="fa-solid fa-plus mr-1.5"></i> Create Notebook
+                        </a>
+                    </div>
+                </div>
+
+                <div id="notebooks-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div class="skeleton h-40 rounded-2xl"></div>
+                    <div class="skeleton h-40 rounded-2xl"></div>
+                    <div class="skeleton h-40 rounded-2xl"></div>
+                    <div class="skeleton h-40 rounded-2xl"></div>
+                </div>
+
+                <div id="notebooks-empty" class="hidden flex-col items-center justify-center text-center py-16 bg-darkCard/50 border border-dashed border-white/10 rounded-2xl">
+                    <i class="fa-solid fa-book-open text-4xl mb-4 text-gray-700"></i>
+                    <p class="text-gray-400 font-medium mb-1">No notebooks yet</p>
+                    <p class="text-xs text-gray-600 mb-5">Create your first notebook to start organizing notes, PDFs, slides & links.</p>
+                    <a href="/hub/notebooks/new" class="bg-accent hover:bg-indigo-500 text-white text-sm font-bold py-2.5 px-6 rounded-xl transition-colors">
+                        <i class="fa-solid fa-plus mr-2"></i> Create Notebook
                     </a>
-                    <button class="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium py-2 px-4 rounded-xl transition-colors">
-                        <i class="fa-solid fa-folder-open mr-2"></i> View All Files
-                    </button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div class="lg:col-span-12">
-                    <div class="bg-gradient-to-br from-accent/10 to-[#111827] rounded-2xl p-8 border border-accent/30 shadow-[0_0_30px_rgba(109,94,247,0.05)] relative overflow-hidden group">
-                        <div class="absolute -right-10 -top-10 w-64 h-64 bg-accent/10 rounded-full blur-3xl group-hover:bg-accent/20 transition-all duration-500"></div>
-                        <div class="relative z-10 max-w-3xl">
-                            <div class="flex items-center gap-2 mb-4">
-                                <i class="fa-solid fa-sparkles text-accent"></i>
-                                <span class="text-xs font-bold text-accent uppercase tracking-wider">AI Semantic Search</span>
-                            </div>
-                            <h2 class="text-2xl font-bold text-white mb-6">What do you want to understand today?</h2>
-                            <div class="relative">
-                                <input type="text" placeholder="Ask anything, upload a page snippet, or talk to analyze..." class="w-full bg-darkBg border border-white/10 rounded-xl py-4 pl-4 pr-52 text-white focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all placeholder-gray-500">
-                                <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                                    <button class="text-gray-400 hover:text-white hover:bg-white/5 p-2 rounded-lg transition-all" title="Search via Voice Input"><i class="fa-solid fa-microphone text-sm"></i></button>
-                                    <button class="text-gray-400 hover:text-white hover:bg-white/5 p-2 rounded-lg transition-all mr-2" title="Upload Document Image / Scan Screenshot"><i class="fa-solid fa-camera text-sm"></i></button>
-                                    <button class="bg-accent hover:bg-indigo-500 text-white font-medium py-2 px-5 rounded-lg shadow-lg shadow-accent/25 transition-all">Ask AI</button>
-                                </div>
-                            </div>
-                            <div class="flex gap-2 mt-4">
-                                <button class="text-xs bg-white/5 hover:bg-white/10 border border-white/5 px-3 py-1.5 rounded-full text-gray-400 transition-colors">Explain AVL Trees</button>
-                                <button class="text-xs bg-white/5 hover:bg-white/10 border border-white/5 px-3 py-1.5 rounded-full text-gray-400 transition-colors">Summarize last week's notes</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-12 mt-4">
-                    <h2 class="text-lg font-bold text-white mb-4">Due For Review <span class="text-warning">🔥</span></h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-darkCard rounded-2xl p-6 border border-white/5 hover:border-white/10 transition-colors group cursor-pointer">
-                            <div class="flex justify-between items-start mb-4">
-                                <div class="w-10 h-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center text-xl"><i class="fa-solid fa-microchip"></i></div>
-                                <span class="bg-danger/10 text-danger text-xs font-bold px-2 py-1 rounded">24 Due</span>
-                            </div>
-                            <h3 class="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors">Operating Systems</h3>
-                            <p class="text-xs text-gray-500 mb-6">Generated from: Process Scheduling PDF</p>
-                            <div class="w-full bg-darkBg rounded-full h-1.5 mb-4"><div class="bg-accent h-1.5 rounded-full" style="width: 68%"></div></div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-gray-400 font-medium">68% Mastery</span>
-                                <button class="text-sm font-bold text-white bg-white/5 hover:bg-white/10 py-1.5 px-4 rounded-lg transition-colors">Study</button>
-                            </div>
-                        </div>
-                        <div class="bg-darkCard rounded-2xl p-6 border border-white/5 hover:border-white/10 transition-colors group cursor-pointer">
-                            <div class="flex justify-between items-start mb-4">
-                                <div class="w-10 h-10 rounded-lg bg-success/10 text-success flex items-center justify-center text-xl"><i class="fa-solid fa-code"></i></div>
-                                <span class="bg-warning/10 text-warning text-xs font-bold px-2 py-1 rounded">12 Due</span>
-                            </div>
-                            <h3 class="text-lg font-bold text-white mb-1 group-hover:text-success transition-colors">Data Structures</h3>
-                            <p class="text-xs text-gray-500 mb-6">Generated from: MIT YouTube Playlist</p>
-                            <div class="w-full bg-darkBg rounded-full h-1.5 mb-4"><div class="bg-success h-1.5 rounded-full" style="width: 85%"></div></div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-gray-400 font-medium">85% Mastery</span>
-                                <button class="text-sm font-bold text-white bg-white/5 hover:bg-white/10 py-1.5 px-4 rounded-lg transition-colors">Study</button>
-                            </div>
-                        </div>
-                        <div class="bg-darkCard rounded-2xl p-6 border border-white/5 hover:border-white/10 transition-colors group cursor-pointer opacity-70">
-                            <div class="flex justify-between items-start mb-4">
-                                <div class="w-10 h-10 rounded-lg bg-gray-800 text-gray-400 flex items-center justify-center text-xl"><i class="fa-solid fa-network-wired"></i></div>
-                                <span class="bg-darkBg text-gray-500 text-xs font-bold px-2 py-1 rounded border border-white/5">0 Due</span>
-                            </div>
-                            <h3 class="text-lg font-bold text-white mb-1">Computer Networks</h3>
-                            <p class="text-xs text-gray-500 mb-6">Generated from: Chapter 1-3 Notes</p>
-                            <div class="w-full bg-darkBg rounded-full h-1.5 mb-4"><div class="bg-gray-600 h-1.5 rounded-full" style="width: 95%"></div></div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-gray-400 font-medium">95% Mastery</span>
-                                <span class="text-xs text-success font-bold"><i class="fa-solid fa-check"></i> Caught up</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-12 mt-4">
-                    <div class="bg-darkCard rounded-2xl p-6 border border-white/5">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-lg font-bold text-white">Recent Summaries & Notes</h2>
-                            <i class="fa-solid fa-ellipsis text-gray-500 cursor-pointer"></i>
-                        </div>
-                        <div class="flex flex-col gap-3">
-                            <div class="flex items-center justify-between p-3 bg-darkBg rounded-xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer group">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center text-lg"><i class="fa-brands fa-youtube"></i></div>
-                                    <div>
-                                        <p class="font-bold text-sm text-white group-hover:text-accent transition-colors">MIT Linear Algebra Lec 1</p>
-                                        <p class="text-xs text-gray-500">YouTube Video Summary • Generated 2 days ago</p>
-                                    </div>
-                                </div>
-                                <div class="flex gap-2">
-                                    <span class="bg-white/5 text-gray-300 text-xs font-medium px-3 py-1 rounded-lg">Summary</span>
-                                    <span class="bg-accent/10 text-accent text-xs font-medium px-3 py-1 rounded-lg">Read</span>
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-darkBg rounded-xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer group">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-lg"><i class="fa-solid fa-file-pdf"></i></div>
-                                    <div>
-                                        <p class="font-bold text-sm text-white group-hover:text-accent transition-colors">Neuroscience Syllabus & Key Terms</p>
-                                        <p class="text-xs text-gray-500">PDF Document • Generated yesterday</p>
-                                    </div>
-                                </div>
-                                <div class="flex gap-2">
-                                    <span class="bg-white/5 text-gray-300 text-xs font-medium px-3 py-1 rounded-lg">Summary</span>
-                                    <span class="bg-white/5 text-gray-300 text-xs font-medium px-3 py-1 rounded-lg">Mind Map</span>
-                                    <span class="bg-accent/10 text-accent text-xs font-medium px-3 py-1 rounded-lg">Read</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-            <div class="h-24"></div>
-        </div>
-
-        <div class="absolute bottom-8 right-8 z-50 group">
-            <button class="w-14 h-14 bg-accent hover:bg-indigo-500 text-white rounded-full shadow-[0_0_20px_rgba(109,94,247,0.4)] flex items-center justify-center text-2xl transition-transform group-hover:rotate-45">
-                <i class="fa-solid fa-plus"></i>
-            </button>
+            <div class="h-16"></div>
         </div>
     </main>
 
+    <!-- ===================== TO-DO MODAL ===================== -->
+    <div id="todo-modal" class="hidden fixed inset-0 bg-black/70 modal-backdrop z-50 items-start justify-center p-4 pt-16">
+        <div class="bg-darkCard2 border border-white/10 rounded-2xl w-full max-w-lg pop-in shadow-2xl">
+            <div class="flex justify-between items-center px-6 pt-5 pb-4 border-b border-white/5">
+                <div>
+                    <h3 class="text-base font-bold text-white flex items-center gap-2"><i class="fa-solid fa-list-check text-accent text-sm"></i> To-Do List</h3>
+                    <p id="todo-modal-subtitle" class="text-[11px] text-gray-500 mt-0.5">Loading tasks…</p>
+                </div>
+                <button onclick="closeTodoModal()" class="text-gray-400 hover:text-white p-1"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Add task form -->
+            <div class="px-6 py-4 border-b border-white/5">
+                <form id="quick-add-form" class="flex flex-col gap-2.5">
+                    <div class="flex gap-2">
+                        <input id="quick-add-input" type="text" placeholder="Add a task and hit enter…"
+                            class="flex-1 bg-darkBg border border-white/10 rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none focus:border-accent placeholder-gray-500 transition-all">
+                        <button type="submit" class="bg-accent hover:bg-indigo-500 text-white w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors">
+                            <i class="fa-solid fa-plus text-sm"></i>
+                        </button>
+                    </div>
+                    <!-- Extended options -->
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <input id="quick-tag-input" type="text" placeholder="Tag (optional)"
+                            class="bg-darkBg border border-white/10 rounded-lg py-1.5 px-3 text-xs text-white focus:outline-none focus:border-accent placeholder-gray-500 w-32">
+                        <input id="quick-due-input" type="date"
+                            class="bg-darkBg border border-white/10 rounded-lg py-1.5 px-3 text-xs text-white focus:outline-none focus:border-accent">
+                        <div class="flex gap-1">
+                            <button type="button" data-priority="low" onclick="selectQuickPriority('low')" class="quick-priority-pill text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-success/30 text-success bg-success/10">Low</button>
+                            <button type="button" data-priority="medium" onclick="selectQuickPriority('medium')" class="quick-priority-pill text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-warning/30 text-warning bg-warning/10">Med</button>
+                            <button type="button" data-priority="high" onclick="selectQuickPriority('high')" class="quick-priority-pill text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-danger/30 text-danger bg-danger/10">High</button>
+                        </div>
+                        <!-- Card color picker -->
+                        <div class="flex items-center gap-1.5 ml-auto">
+                            <span class="text-[10px] text-gray-500">Card:</span>
+                            <div class="color-swatch selected w-5 h-5" style="background:#1E293B" data-color="#1E293B" onclick="selectCardColor(this)"></div>
+                            <div class="color-swatch w-5 h-5" style="background:#1e1b4b" data-color="#1e1b4b" onclick="selectCardColor(this)"></div>
+                            <div class="color-swatch w-5 h-5" style="background:#14532d" data-color="#14532d" onclick="selectCardColor(this)"></div>
+                            <div class="color-swatch w-5 h-5" style="background:#7c2d12" data-color="#7c2d12" onclick="selectCardColor(this)"></div>
+                            <div class="color-swatch w-5 h-5" style="background:#1e3a5f" data-color="#1e3a5f" onclick="selectCardColor(this)"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Filters -->
+            <div class="px-6 pt-3 pb-2 flex gap-2">
+                <button onclick="setModalFilter('all')" data-filter="all" class="modal-filter-tab text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors">All</button>
+                <button onclick="setModalFilter('pending')" data-filter="pending" class="modal-filter-tab text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors">Pending</button>
+                <button onclick="setModalFilter('completed')" data-filter="completed" class="modal-filter-tab text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors">Done</button>
+            </div>
+
+            <!-- Task list -->
+            <div id="todo-list" class="flex flex-col gap-2 overflow-y-auto px-6 pb-6 pt-2" style="max-height: 360px;">
+                <div class="skeleton h-12 rounded-xl"></div>
+                <div class="skeleton h-12 rounded-xl"></div>
+                <div class="skeleton h-12 rounded-xl"></div>
+            </div>
+
+            <div id="todo-empty" class="hidden flex-col items-center justify-center text-center py-8 px-6 text-gray-600">
+                <i class="fa-regular fa-circle-check text-3xl mb-2 opacity-40"></i>
+                <p class="text-sm">All clear! Add a task above.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== EDIT TASK MODAL ===================== -->
+    <div id="edit-modal" class="hidden fixed inset-0 bg-black/60 modal-backdrop z-[60] items-center justify-center p-4">
+        <div class="bg-darkCard2 border border-white/10 rounded-2xl w-full max-w-md p-6 pop-in">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-base font-bold text-white">Edit Task</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="edit-task-form" class="flex flex-col gap-3">
+                <input type="hidden" id="edit-task-id">
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Title</label>
+                    <input id="edit-title" type="text" required class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Notes</label>
+                    <textarea id="edit-notes" rows="2" class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent resize-none"></textarea>
+                </div>
+                <div class="flex gap-3">
+                    <div class="flex-1">
+                        <label class="text-xs text-gray-500 mb-1 block">Tag</label>
+                        <input id="edit-tag" type="text" class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent">
+                    </div>
+                    <div class="flex-1">
+                        <label class="text-xs text-gray-500 mb-1 block">Due Date</label>
+                        <input id="edit-due" type="date" class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Priority</label>
+                    <div class="flex gap-2">
+                        <button type="button" data-priority="low" onclick="selectEditPriority('low')" class="edit-priority-pill flex-1 text-xs font-bold py-2 rounded-lg border border-success/30 text-success bg-success/10">Low</button>
+                        <button type="button" data-priority="medium" onclick="selectEditPriority('medium')" class="edit-priority-pill flex-1 text-xs font-bold py-2 rounded-lg border border-warning/30 text-warning bg-warning/10">Medium</button>
+                        <button type="button" data-priority="high" onclick="selectEditPriority('high')" class="edit-priority-pill flex-1 text-xs font-bold py-2 rounded-lg border border-danger/30 text-danger bg-danger/10">High</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Card Color</label>
+                    <div class="flex gap-2">
+                        <div class="edit-color-swatch color-swatch selected w-6 h-6" style="background:#1E293B" data-color="#1E293B" onclick="selectEditColor(this)"></div>
+                        <div class="edit-color-swatch color-swatch w-6 h-6" style="background:#1e1b4b" data-color="#1e1b4b" onclick="selectEditColor(this)"></div>
+                        <div class="edit-color-swatch color-swatch w-6 h-6" style="background:#14532d" data-color="#14532d" onclick="selectEditColor(this)"></div>
+                        <div class="edit-color-swatch color-swatch w-6 h-6" style="background:#7c2d12" data-color="#7c2d12" onclick="selectEditColor(this)"></div>
+                        <div class="edit-color-swatch color-swatch w-6 h-6" style="background:#1e3a5f" data-color="#1e3a5f" onclick="selectEditColor(this)"></div>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-2">
+                    <button type="button" onclick="deleteFromModal()" class="bg-danger/10 hover:bg-danger/20 border border-danger/30 text-danger text-sm font-bold py-2.5 px-5 rounded-xl transition-colors">
+                        <i class="fa-solid fa-trash mr-1"></i> Delete
+                    </button>
+                    <button type="submit" class="flex-1 bg-accent hover:bg-indigo-500 text-white text-sm font-bold py-2.5 rounded-xl transition-colors">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================== NO-DISTRACTION VIEWER MODAL ===================== -->
+    <div id="viewer-modal" class="hidden fixed inset-0 bg-black/95 z-[70] flex flex-col">
+
+        <!-- Top bar -->
+        <div class="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-darkCard shrink-0">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-shield-halved text-accent"></i>
+                <span class="text-sm font-bold text-white">Focus Mode — No Distraction Viewer</span>
+                <span class="text-[10px] bg-success/20 text-success border border-success/30 px-2 py-0.5 rounded-full">Locked to StudyOS</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <!-- PDF controls (shown only for PDF mode) -->
+                <div id="pdf-controls" class="hidden items-center gap-2">
+                    <button onclick="pdfPrevPage()" class="text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg text-xs transition-colors"><i class="fa-solid fa-chevron-left"></i></button>
+                    <span class="text-xs text-gray-300 font-mono"><span id="pdf-page-num">1</span> / <span id="pdf-page-total">–</span></span>
+                    <button onclick="pdfNextPage()" class="text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg text-xs transition-colors"><i class="fa-solid fa-chevron-right"></i></button>
+                    <div class="w-px h-4 bg-white/10 mx-1"></div>
+                    <button onclick="pdfZoomOut()" class="text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg text-xs transition-colors"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                    <span id="pdf-zoom-label" class="text-xs text-gray-500 font-mono w-10 text-center">100%</span>
+                    <button onclick="pdfZoomIn()" class="text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1.5 rounded-lg text-xs transition-colors"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                </div>
+                <select id="viewer-type" onchange="switchViewerType()" class="bg-darkBg border border-white/10 rounded-lg py-1.5 px-3 text-xs text-white focus:outline-none">
+                    <option value="pdf">📄 PDF Document</option>
+                    <option value="video">▶️ YouTube Video</option>
+                </select>
+                <button onclick="closeViewerModal()" class="text-gray-400 hover:text-white text-sm px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
+                    <i class="fa-solid fa-xmark mr-1"></i> Exit Focus
+                </button>
+            </div>
+        </div>
+
+        <!-- Input bar -->
+        <div id="viewer-input-bar" class="px-6 py-3 border-b border-white/5 bg-darkCard/50 shrink-0 flex gap-3 items-center">
+            <input id="viewer-url-input" type="text" placeholder="Paste YouTube URL here…"
+                class="flex-1 bg-darkBg border border-white/10 rounded-xl py-2 px-4 text-sm text-white focus:outline-none focus:border-accent placeholder-gray-500"
+                onkeydown="if(event.key==='Enter') loadViewerContent()">
+            <button onclick="loadViewerContent()" class="bg-accent hover:bg-indigo-500 text-white text-sm font-bold py-2 px-5 rounded-xl transition-colors">
+                Load
+            </button>
+            <label id="pdf-upload-label" class="hidden bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-sm font-bold py-2 px-4 rounded-xl transition-colors cursor-pointer">
+                <i class="fa-solid fa-upload mr-1.5"></i> Upload PDF
+                <input type="file" accept=".pdf,.PDF" class="hidden" onchange="loadPDFFile(event)">
+            </label>
+        </div>
+
+        <!-- Content area -->
+        <div class="flex-1 overflow-hidden relative" style="background:#1a1a1a;">
+
+            <!-- Placeholder -->
+            <div id="viewer-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
+                <i class="fa-solid fa-play-circle text-5xl mb-4 text-accent/30"></i>
+                <p class="text-lg font-semibold text-gray-500">No content loaded</p>
+                <p class="text-sm text-gray-600 mt-2">Select a mode above, then paste a URL or upload a PDF.</p>
+                <p class="text-xs text-gray-700 mt-3">Content stays inside StudyOS — no tabs, no distractions.</p>
+            </div>
+
+            <!-- YouTube iframe -->
+            <iframe id="viewer-iframe" class="hidden w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen></iframe>
+
+            <!-- PDF.js canvas viewer -->
+            <div id="pdf-viewer-wrap" class="hidden w-full h-full overflow-auto flex flex-col items-center py-6 gap-4" style="background:#1a1a1a;">
+                <div id="pdf-loading" class="hidden flex flex-col items-center gap-3 py-16">
+                    <div class="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+                    <p class="text-sm text-gray-400">Rendering PDF…</p>
+                </div>
+                <canvas id="pdf-canvas" class="shadow-2xl rounded" style="max-width:100%;"></canvas>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const USER_ID = 'Skydrop';
+        let allTasks = [];
+        let modalFilter = 'all';
+        let quickPriority = 'medium';
+        let quickCardColor = '#1E293B';
+        let editTaskPriority = 'medium';
+        let editCardColor = '#1E293B';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotebooks();
+            loadTasks();
+            setModalFilter('all');
+            selectQuickPriority('medium');
+        });
+
+        // ===================== NOTEBOOKS =====================
+        async function loadNotebooks() {
+            try {
+                const res = await fetch(`/api/smartnotebook/notebooks?user_id=${USER_ID}`);
+                const json = await res.json();
+                const notebooks = json.data || [];
+                document.getElementById('stat-notebooks').textContent = notebooks.length;
+                renderNotebooks(notebooks);
+            } catch (e) {
+                document.getElementById('notebooks-grid').innerHTML = `<p class="text-xs text-gray-600 col-span-full text-center py-8">Couldn't load notebooks.</p>`;
+            }
+        }
+
+        function renderNotebooks(notebooks) {
+            const grid = document.getElementById('notebooks-grid');
+            const empty = document.getElementById('notebooks-empty');
+            if (!notebooks.length) {
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden'); empty.classList.add('flex');
+                return;
+            }
+            grid.classList.remove('hidden');
+            empty.classList.add('hidden'); empty.classList.remove('flex');
+            grid.innerHTML = notebooks.map(nb => `
+                <a href="/hub/notebooks/${nb._id}" class="notebook-card pop-in bg-darkCard rounded-2xl p-5 border border-white/5 hover:border-white/20 flex flex-col group relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 w-28 h-28 rounded-full blur-2xl opacity-15 group-hover:opacity-25 transition-opacity" style="background:${nb.color}"></div>
+                    <div class="relative z-10 flex flex-col h-full">
+                        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg mb-3 shrink-0"
+                             style="background:${nb.color}22; color:${nb.color}; border:1px solid ${nb.color}44;">
+                            <i class="${nb.icon}"></i>
+                        </div>
+                        <h3 class="text-sm font-bold text-white mb-1 truncate group-hover:text-accent transition-colors">${escapeHtml(nb.title)}</h3>
+                        <p class="text-xs text-gray-500 mb-3 line-clamp-2 flex-1">${escapeHtml(nb.description || 'No description yet.')}</p>
+                        <div class="flex items-center gap-3 text-[11px] text-gray-500 mt-auto pt-3 border-t border-white/5">
+                            <span><i class="fa-regular fa-folder mr-1"></i>${nb.folderCount ?? 0}</span>
+                            <span><i class="fa-regular fa-file mr-1"></i>${nb.itemCount ?? 0}</span>
+                        </div>
+                    </div>
+                </a>
+            `).join('');
+        }
+
+        // ===================== TODO MODAL =====================
+        async function loadTasks() {
+            try {
+                const res = await fetch(`/api/tasks?user_id=${USER_ID}`);
+                const json = await res.json();
+                allTasks = json.data || [];
+                const pending = allTasks.filter(t => !t.completed).length;
+                document.getElementById('stat-tasks').textContent = pending;
+                renderTodoModal();
+            } catch (e) { console.error('loadTasks', e); }
+        }
+
+        function openTodoModal() {
+            document.getElementById('todo-modal').classList.remove('hidden');
+            document.getElementById('todo-modal').classList.add('flex');
+            loadTasks();
+        }
+
+        function closeTodoModal() {
+            document.getElementById('todo-modal').classList.add('hidden');
+            document.getElementById('todo-modal').classList.remove('flex');
+        }
+
+        document.getElementById('todo-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'todo-modal') closeTodoModal();
+        });
+
+        function setModalFilter(f) {
+            modalFilter = f;
+            document.querySelectorAll('.modal-filter-tab').forEach(btn => {
+                const active = btn.dataset.filter === f;
+                btn.className = `modal-filter-tab text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors ${active ? 'bg-accent/20 border-accent/40 text-accent' : 'border-white/10 text-gray-400 hover:text-white'}`;
+            });
+            renderTodoModal();
+        }
+
+        function renderTodoModal() {
+            const list = document.getElementById('todo-list');
+            const empty = document.getElementById('todo-empty');
+            const subtitle = document.getElementById('todo-modal-subtitle');
+
+            let tasks = allTasks;
+            if (modalFilter === 'pending') tasks = tasks.filter(t => !t.completed);
+            if (modalFilter === 'completed') tasks = tasks.filter(t => t.completed);
+
+            const pending = allTasks.filter(t => !t.completed).length;
+            subtitle.textContent = pending === 0 ? "All caught up!" : `${pending} task${pending !== 1 ? 's' : ''} pending`;
+
+            if (!tasks.length) {
+                list.innerHTML = '';
+                list.classList.add('hidden');
+                empty.classList.remove('hidden'); empty.classList.add('flex');
+                return;
+            }
+            list.classList.remove('hidden');
+            empty.classList.add('hidden'); empty.classList.remove('flex');
+
+            const priorityColor = { high: 'bg-danger', medium: 'bg-warning', low: 'bg-success' };
+
+            list.innerHTML = tasks.map(t => {
+                const cardBg = t.cardColor || '#1E293B';
+                const due = t.dueDate ? formatDate(t.dueDate) : null;
+                return `
+                <div class="task-row pop-in ${t.completed ? 'completed' : ''} flex items-center gap-3 border border-white/5 hover:border-white/10 rounded-xl px-4 py-3 transition-colors group" style="background:${cardBg}">
+                    <button onclick="quickToggle('${t._id}')" class="w-5 h-5 rounded-full border-2 ${t.completed ? 'bg-accent border-accent' : 'border-gray-500 hover:border-accent'} flex items-center justify-center shrink-0 transition-all">
+                        ${t.completed ? '<i class="fa-solid fa-check text-[9px] text-white"></i>' : ''}
+                    </button>
+                    <div class="flex-1 min-w-0 cursor-pointer" onclick="openEditModal('${t._id}')">
+                        <p class="task-title text-sm font-medium text-white truncate">${escapeHtml(t.title)}</p>
+                        <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                            ${t.tag ? `<span class="text-[10px] bg-white/5 text-gray-400 px-1.5 py-0.5 rounded">${escapeHtml(t.tag)}</span>` : ''}
+                            ${due ? `<span class="text-[10px] text-gray-500"><i class="fa-regular fa-calendar mr-0.5"></i>${due}</span>` : ''}
+                        </div>
+                    </div>
+                    <span class="w-2 h-2 rounded-full ${priorityColor[t.priority] || 'bg-gray-500'} shrink-0"></span>
+                    <button onclick="openEditModal('${t._id}')" class="text-gray-600 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity p-1">
+                        <i class="fa-solid fa-pen text-[10px]"></i>
+                    </button>
+                </div>`;
+            }).join('');
+        }
+
+        async function quickToggle(taskId) {
+            try {
+                await fetch(`/api/tasks/${taskId}/toggle?user_id=${USER_ID}`, { method: 'PATCH' });
+                await loadTasks();
+            } catch (e) { console.error('quickToggle', e); }
+        }
+
+        document.getElementById('quick-add-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('quick-add-input');
+            const title = input.value.trim();
+            if (!title) return;
+            const tag = document.getElementById('quick-tag-input').value.trim();
+            const due = document.getElementById('quick-due-input').value;
+            input.value = '';
+            try {
+                await fetch(`/api/tasks?user_id=${USER_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, priority: quickPriority, tag: tag || null, due_date: due || null, card_color: quickCardColor })
+                });
+                await loadTasks();
+            } catch (e) { console.error('quick-add', e); }
+        });
+
+        function selectQuickPriority(p) {
+            quickPriority = p;
+            document.querySelectorAll('.quick-priority-pill').forEach(btn => {
+                btn.classList.toggle('opacity-40', btn.dataset.priority !== p);
+                btn.dataset.active = btn.dataset.priority === p ? 'true' : 'false';
+            });
+        }
+
+        function selectCardColor(el) {
+            quickCardColor = el.dataset.color;
+            document.querySelectorAll('.color-swatch:not(.edit-color-swatch)').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        // ===================== EDIT MODAL =====================
+        function openEditModal(id) {
+            const t = allTasks.find(x => x._id === id);
+            if (!t) return;
+            document.getElementById('edit-task-id').value = t._id;
+            document.getElementById('edit-title').value = t.title || '';
+            document.getElementById('edit-notes').value = t.notes || '';
+            document.getElementById('edit-tag').value = t.tag || '';
+            document.getElementById('edit-due').value = t.dueDate || '';
+            selectEditPriority(t.priority || 'medium');
+            const storedColor = t.cardColor || '#1E293B';
+            editCardColor = storedColor;
+            document.querySelectorAll('.edit-color-swatch').forEach(s => {
+                s.classList.toggle('selected', s.dataset.color === storedColor);
+            });
+            document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('edit-modal').classList.add('flex');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            document.getElementById('edit-modal').classList.remove('flex');
+        }
+
+        function selectEditPriority(p) {
+            editTaskPriority = p;
+            document.querySelectorAll('.edit-priority-pill').forEach(btn => {
+                btn.classList.toggle('opacity-40', btn.dataset.priority !== p);
+                btn.dataset.active = btn.dataset.priority === p ? 'true' : 'false';
+            });
+        }
+
+        function selectEditColor(el) {
+            editCardColor = el.dataset.color;
+            document.querySelectorAll('.edit-color-swatch').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        document.getElementById('edit-task-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-task-id').value;
+            const title = document.getElementById('edit-title').value.trim();
+            if (!title) return;
+            try {
+                await fetch(`/api/tasks/${id}?user_id=${USER_ID}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title,
+                        notes: document.getElementById('edit-notes').value,
+                        tag: document.getElementById('edit-tag').value,
+                        due_date: document.getElementById('edit-due').value,
+                        priority: editTaskPriority,
+                        card_color: editCardColor,
+                    })
+                });
+                closeEditModal();
+                await loadTasks();
+            } catch (e) { console.error('save edit', e); }
+        });
+
+        async function deleteFromModal() {
+            const id = document.getElementById('edit-task-id').value;
+            if (!confirm('Delete this task?')) return;
+            try {
+                await fetch(`/api/tasks/${id}?user_id=${USER_ID}`, { method: 'DELETE' });
+                closeEditModal();
+                await loadTasks();
+            } catch (e) { console.error('delete task', e); }
+        }
+
+        document.getElementById('edit-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'edit-modal') closeEditModal();
+        });
+
+        // ===================== NO-DISTRACTION VIEWER =====================
+        // PDF.js state
+        let pdfDoc = null;
+        let pdfCurrentPage = 1;
+        let pdfScale = 1.4;
+        let pdfRendering = false;
+
+        // Load PDF.js from CDN
+        const pdfjsScript = document.createElement('script');
+        pdfjsScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        document.head.appendChild(pdfjsScript);
+        pdfjsScript.onload = () => {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        };
+
+        function openViewerModal() {
+            document.getElementById('viewer-modal').classList.remove('hidden');
+            switchViewerType(); // set correct UI state
+        }
+
+        function closeViewerModal() {
+            // Stop YouTube
+            const iframe = document.getElementById('viewer-iframe');
+            iframe.src = '';
+            iframe.classList.add('hidden');
+            // Reset PDF
+            pdfDoc = null;
+            pdfCurrentPage = 1;
+            document.getElementById('pdf-viewer-wrap').classList.add('hidden');
+            document.getElementById('pdf-controls').classList.add('hidden');
+            document.getElementById('pdf-controls').classList.remove('flex');
+            document.getElementById('viewer-placeholder').classList.remove('hidden');
+            document.getElementById('viewer-modal').classList.add('hidden');
+        }
+
+        function switchViewerType() {
+            const type = document.getElementById('viewer-type').value;
+            const urlInput = document.getElementById('viewer-url-input');
+            const uploadLabel = document.getElementById('pdf-upload-label');
+
+            if (type === 'video') {
+                urlInput.placeholder = 'Paste YouTube URL here…';
+                uploadLabel.classList.add('hidden');
+            } else {
+                urlInput.placeholder = 'Paste PDF URL here… (or upload below)';
+                uploadLabel.classList.remove('hidden');
+            }
+        }
+
+        function loadViewerContent() {
+            const url = document.getElementById('viewer-url-input').value.trim();
+            const type = document.getElementById('viewer-type').value;
+            if (!url) return;
+
+            hideAllViewerContent();
+
+            if (type === 'video') {
+                const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                const videoId = ytMatch ? ytMatch[1] : null;
+                if (!videoId) { alert('Please paste a valid YouTube URL.'); return; }
+                const iframe = document.getElementById('viewer-iframe');
+                iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&autoplay=1`;
+                iframe.classList.remove('hidden');
+            } else {
+                // PDF via URL — load with PDF.js
+                renderPDFfromURL(url);
+            }
+        }
+
+        function loadPDFFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            document.getElementById('viewer-type').value = 'pdf';
+            switchViewerType();
+            hideAllViewerContent();
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const typedArray = new Uint8Array(e.target.result);
+                renderPDFfromData(typedArray);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function hideAllViewerContent() {
+            document.getElementById('viewer-placeholder').classList.add('hidden');
+            document.getElementById('viewer-iframe').classList.add('hidden');
+            document.getElementById('viewer-iframe').src = '';
+            document.getElementById('pdf-viewer-wrap').classList.add('hidden');
+            document.getElementById('pdf-controls').classList.add('hidden');
+            document.getElementById('pdf-controls').classList.remove('flex');
+        }
+
+        async function renderPDFfromURL(url) {
+            showPDFLoading();
+            try {
+                const loadingTask = pdfjsLib.getDocument({ url, withCredentials: false });
+                const doc = await loadingTask.promise;
+                pdfDoc = doc;
+                pdfCurrentPage = 1;
+                setupPDFControls();
+                await renderPDFPage(pdfCurrentPage);
+            } catch (err) {
+                console.error('PDF load error:', err);
+                document.getElementById('viewer-placeholder').classList.remove('hidden');
+                document.getElementById('viewer-placeholder').innerHTML = `
+                    <i class="fa-solid fa-triangle-exclamation text-4xl mb-3 text-warning/60"></i>
+                    <p class="text-gray-400 font-semibold">Couldn't load PDF</p>
+                    <p class="text-xs text-gray-600 mt-1">The server may block cross-origin access. Try uploading the file directly.</p>`;
+            }
+        }
+
+        async function renderPDFfromData(data) {
+            showPDFLoading();
+            try {
+                const doc = await pdfjsLib.getDocument({ data }).promise;
+                pdfDoc = doc;
+                pdfCurrentPage = 1;
+                setupPDFControls();
+                await renderPDFPage(pdfCurrentPage);
+            } catch (err) {
+                console.error('PDF render error:', err);
+            }
+        }
+
+        function showPDFLoading() {
+            const wrap = document.getElementById('pdf-viewer-wrap');
+            wrap.classList.remove('hidden');
+            document.getElementById('pdf-loading').classList.remove('hidden');
+            document.getElementById('pdf-loading').classList.add('flex');
+            document.getElementById('pdf-canvas').style.display = 'none';
+        }
+
+        function setupPDFControls() {
+            document.getElementById('pdf-page-total').textContent = pdfDoc.numPages;
+            document.getElementById('pdf-page-num').textContent = pdfCurrentPage;
+            document.getElementById('pdf-zoom-label').textContent = Math.round(pdfScale * 100) + '%';
+            const ctrl = document.getElementById('pdf-controls');
+            ctrl.classList.remove('hidden');
+            ctrl.classList.add('flex');
+        }
+
+        async function renderPDFPage(pageNum) {
+            if (pdfRendering) return;
+            pdfRendering = true;
+            document.getElementById('pdf-loading').classList.remove('hidden');
+            document.getElementById('pdf-loading').classList.add('flex');
+
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: pdfScale });
+            const canvas = document.getElementById('pdf-canvas');
+            canvas.style.display = 'block';
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+
+            document.getElementById('pdf-loading').classList.add('hidden');
+            document.getElementById('pdf-loading').classList.remove('flex');
+            document.getElementById('pdf-page-num').textContent = pageNum;
+            pdfRendering = false;
+
+            // Scroll to top of canvas
+            document.getElementById('pdf-viewer-wrap').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function pdfPrevPage() {
+            if (!pdfDoc || pdfCurrentPage <= 1) return;
+            pdfCurrentPage--;
+            renderPDFPage(pdfCurrentPage);
+        }
+
+        function pdfNextPage() {
+            if (!pdfDoc || pdfCurrentPage >= pdfDoc.numPages) return;
+            pdfCurrentPage++;
+            renderPDFPage(pdfCurrentPage);
+        }
+
+        function pdfZoomIn() {
+            pdfScale = Math.min(pdfScale + 0.25, 3.0);
+            document.getElementById('pdf-zoom-label').textContent = Math.round(pdfScale * 100) + '%';
+            if (pdfDoc) renderPDFPage(pdfCurrentPage);
+        }
+
+        function pdfZoomOut() {
+            pdfScale = Math.max(pdfScale - 0.25, 0.5);
+            document.getElementById('pdf-zoom-label').textContent = Math.round(pdfScale * 100) + '%';
+            if (pdfDoc) renderPDFPage(pdfCurrentPage);
+        }
+
+        // Keyboard navigation for PDF
+        document.addEventListener('keydown', (e) => {
+            if (!pdfDoc) return;
+            if (document.getElementById('viewer-modal').classList.contains('hidden')) return;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') pdfNextPage();
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') pdfPrevPage();
+        });
+
+        function formatDate(iso) {
+            try {
+                const d = new Date(iso + 'T00:00:00');
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            } catch { return iso; }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+        }
+    </script>
 </body>
 </html>

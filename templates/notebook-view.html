@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notebook - StudyOS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#090B14',
+                        darkCard: '#111827',
+                        accent: '#6D5EF7',
+                        success: '#22C55E',
+                        warning: '#F59E0B',
+                        danger: '#EF4444',
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+        .hidden-item { display: none !important; }
+        .modal-backdrop { backdrop-filter: blur(4px); }
+        @keyframes popIn { 0% { transform: translateY(-6px) scale(.98); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        .pop-in { animation: popIn .18s ease-out; }
+        .item-card { transition: transform .18s ease, border-color .18s ease; }
+        .item-card:hover { transform: translateY(-3px); }
+        .crumb-folder { cursor: pointer; }
+        .drag-over-zone { outline: 2px dashed #6D5EF7; outline-offset: -2px; background: rgba(109,94,247,0.06); }
+        .dropzone-active { background: rgba(109,94,247,0.08) !important; border-color: #6D5EF7 !important; }
+        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 37%, rgba(255,255,255,0.03) 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; }
+        @keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+    </style>
+</head>
+<body class="bg-darkBg text-gray-100 font-sans h-screen flex overflow-hidden selection:bg-accent selection:text-white" onclick="closeAllMenus(event)">
+
+    <aside class="w-64 bg-darkCard border-r border-white/5 flex-col justify-between hidden xl:flex shrink-0 z-20">
+        <div class="p-6 flex flex-col gap-8">
+            <div class="flex items-center gap-3 text-xl font-bold text-white">
+                <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-white shadow-[0_0_15px_rgba(109,94,247,0.4)]">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                StudyOS
+            </div>
+            <nav class="flex flex-col gap-2">
+                <a href="/" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-border-all w-5"></i> Dashboard</a>
+                <a href="/cruncher" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-bolt w-5"></i> Content Cruncher</a>
+                <a href="/hub" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-layer-group w-5"></i> Study Hub</a>
+                <div class="ml-10 border-l border-white/10 pl-4 py-2 flex flex-col gap-2">
+                    <span id="sidebar-nb-title" class="text-sm text-accent font-bold flex items-center gap-2 truncate"><i class="fa-solid fa-angle-right text-xs"></i> <span class="truncate">Loading…</span></span>
+                </div>
+                <a href="/todo" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-list-check w-5"></i> To-Do List</a>
+                <a href="/command" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"><i class="fa-solid fa-calendar-check w-5"></i> Command Center</a>
+            </nav>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <header class="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-darkBg/80 backdrop-blur-md z-20 shrink-0">
+            <div class="flex items-center gap-3 text-gray-400 text-sm min-w-0">
+                <a href="/hub" class="hover:text-white transition-colors shrink-0">Study Hub</a>
+                <i class="fa-solid fa-chevron-right text-[10px] shrink-0"></i>
+                <span id="header-nb-name" class="text-white font-medium truncate">Loading…</span>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+                <button onclick="openNotebookSettings()" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors" title="Notebook settings"><i class="fa-solid fa-gear"></i></button>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-accent to-purple-500 p-[2px]"><img src="https://ui-avatars.com/api/?name=Rishikesh&background=111827&color=fff" class="w-full h-full rounded-full border border-darkCard"></div>
+            </div>
+        </header>
+
+        <div class="flex-1 p-8 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
+
+            <!-- Notebook hero header -->
+            <div id="notebook-hero" class="flex items-center gap-5 mb-6 shrink-0">
+                <div id="hero-icon" class="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl shrink-0 skeleton"></div>
+                <div class="min-w-0 flex-1">
+                    <h1 id="hero-title" class="text-2xl font-bold text-white truncate">Loading…</h1>
+                    <p id="hero-desc" class="text-sm text-gray-500 truncate">​</p>
+                </div>
+            </div>
+
+            <!-- Toolbar: breadcrumbs + search + add buttons -->
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5 shrink-0">
+                <div id="breadcrumbs" class="flex items-center gap-1.5 text-sm text-gray-400 flex-wrap min-w-0"></div>
+
+                <div class="flex items-center gap-2">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-xs"></i>
+                        <input id="search-input" type="text" placeholder="Search this notebook…" oninput="onSearchInput()"
+                            class="bg-darkCard border border-white/10 rounded-xl py-2 pl-9 pr-3 text-xs text-white focus:outline-none focus:border-accent w-44 focus:w-60 transition-all placeholder-gray-500">
+                    </div>
+
+                    <div class="relative">
+                        <button onclick="toggleAddMenu(event)" class="bg-accent hover:bg-indigo-500 text-white text-sm font-bold py-2 px-4 rounded-xl transition-colors flex items-center gap-2 shadow-lg shadow-accent/20">
+                            <i class="fa-solid fa-plus"></i> Add
+                        </button>
+                        <div id="add-menu" class="hidden-item absolute right-0 top-12 bg-darkCard border border-white/10 rounded-xl shadow-2xl py-2 w-56 z-30">
+                            <button onclick="event.stopPropagation(); closeAddMenu(); openNewFolderPrompt();" class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-3"><i class="fa-regular fa-folder w-4 text-accent"></i> New Folder</button>
+                            <button onclick="event.stopPropagation(); closeAddMenu(); openNoteModal();" class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-3"><i class="fa-regular fa-note-sticky w-4 text-accent"></i> New Note</button>
+                            <button onclick="event.stopPropagation(); closeAddMenu(); openLinkModal();" class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-3"><i class="fa-solid fa-link w-4 text-accent"></i> Save a Link / Video</button>
+                            <button onclick="event.stopPropagation(); closeAddMenu(); triggerFileUpload();" class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-3"><i class="fa-solid fa-cloud-arrow-up w-4 text-accent"></i> Upload File</button>
+                        </div>
+                    </div>
+                    <input type="file" id="file-input" class="hidden-item" onchange="handleFileInputChange(event)">
+                </div>
+            </div>
+
+            <!-- Drop zone wrapper -->
+            <div id="drop-zone" class="flex-1 rounded-2xl border border-transparent transition-all min-h-[300px]"
+                 ondragover="onZoneDragOver(event)" ondragleave="onZoneDragLeave(event)" ondrop="onZoneDrop(event)">
+
+                <!-- Folders row -->
+                <div id="folders-section" class="mb-6">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Folders</h3>
+                    <div id="folders-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                        <div class="skeleton h-20 rounded-xl"></div>
+                        <div class="skeleton h-20 rounded-xl"></div>
+                    </div>
+                </div>
+
+                <!-- Items grid -->
+                <div id="items-section">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Items</h3>
+                    <div id="items-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div class="skeleton h-32 rounded-xl"></div>
+                        <div class="skeleton h-32 rounded-xl"></div>
+                        <div class="skeleton h-32 rounded-xl"></div>
+                    </div>
+                </div>
+
+                <div id="empty-state" class="hidden-item flex-col items-center justify-center text-center py-20 text-gray-600">
+                    <i class="fa-solid fa-folder-open text-5xl mb-4 opacity-30"></i>
+                    <p class="text-sm font-medium mb-1">This space is empty</p>
+                    <p class="text-xs text-gray-700 mb-4">Add a folder, note, link, or upload a file — or just drag &amp; drop one here.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===================== NOTE EDITOR PANEL (slide-over) ===================== -->
+    <div id="note-overlay" class="hidden-item fixed inset-0 bg-black/60 modal-backdrop z-40" onclick="closeNoteModal()"></div>
+    <div id="note-panel" class="hidden-item fixed top-0 right-0 h-full w-full max-w-xl bg-darkCard border-l border-white/10 z-50 flex flex-col shadow-2xl">
+        <div class="h-16 border-b border-white/5 flex items-center justify-between px-6 shrink-0">
+            <input id="note-name-input" type="text" placeholder="Untitled note" class="bg-transparent text-white font-bold text-lg focus:outline-none w-full mr-3">
+            <div class="flex items-center gap-2 shrink-0">
+                <button id="note-save-btn" onclick="saveNote()" class="bg-accent hover:bg-indigo-500 text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors"><i class="fa-solid fa-floppy-disk mr-1"></i> Save</button>
+                <button onclick="closeNoteModal()" class="text-gray-400 hover:text-white p-2"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <textarea id="note-content-input" placeholder="Start typing your note…" class="flex-1 bg-darkBg/40 text-gray-200 text-sm p-6 focus:outline-none resize-none leading-relaxed custom-scrollbar"></textarea>
+    </div>
+
+    <!-- ===================== LINK MODAL ===================== -->
+    <div id="link-modal" class="hidden-item fixed inset-0 bg-black/60 modal-backdrop z-50 items-center justify-center p-4">
+        <div class="bg-darkCard border border-white/10 rounded-2xl w-full max-w-md p-6 pop-in">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-white"><i class="fa-solid fa-link text-accent mr-2"></i>Save a Link or Video</h3>
+                <button onclick="closeLinkModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="link-form" class="flex flex-col gap-3">
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">URL</label>
+                    <input id="link-url-input" type="url" required placeholder="https://youtube.com/watch?v=…" class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Title</label>
+                    <input id="link-name-input" type="text" placeholder="e.g. MIT Lecture 4 — Recursion" class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Type</label>
+                    <div class="flex gap-2">
+                        <button type="button" data-kind="video" onclick="pickLinkKind('video')" class="link-kind-pill flex-1 text-xs font-bold py-2 rounded-lg border border-white/10 text-gray-400">🎬 Video</button>
+                        <button type="button" data-kind="article" onclick="pickLinkKind('article')" class="link-kind-pill flex-1 text-xs font-bold py-2 rounded-lg border border-white/10 text-gray-400">📰 Article</button>
+                        <button type="button" data-kind="other" onclick="pickLinkKind('other')" class="link-kind-pill flex-1 text-xs font-bold py-2 rounded-lg border border-white/10 text-gray-400">🔗 Other</button>
+                    </div>
+                </div>
+                <button type="submit" class="bg-accent hover:bg-indigo-500 text-white text-sm font-bold py-2.5 rounded-xl transition-colors mt-2">Save Link</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================== ITEM PREVIEW MODAL ===================== -->
+    <div id="preview-modal" class="hidden-item fixed inset-0 bg-black/60 modal-backdrop z-50 items-center justify-center p-4">
+        <div class="bg-darkCard border border-white/10 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col pop-in overflow-hidden">
+            <div class="h-16 border-b border-white/5 flex items-center justify-between px-6 shrink-0">
+                <h3 id="preview-title" class="text-white font-bold truncate pr-3">Item</h3>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button id="preview-download-btn" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5" title="Download"><i class="fa-solid fa-download"></i></button>
+                    <button onclick="closePreviewModal()" class="text-gray-400 hover:text-white p-2"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div id="preview-body" class="flex-1 overflow-y-auto custom-scrollbar p-6"></div>
+        </div>
+    </div>
+
+    <!-- ===================== RENAME / SETTINGS MODAL ===================== -->
+    <div id="rename-modal" class="hidden-item fixed inset-0 bg-black/60 modal-backdrop z-50 items-center justify-center p-4">
+        <div class="bg-darkCard border border-white/10 rounded-2xl w-full max-w-sm p-6 pop-in">
+            <h3 id="rename-title" class="text-lg font-bold text-white mb-4">Rename</h3>
+            <input id="rename-input" type="text" class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent mb-4">
+            <div class="flex gap-3">
+                <button onclick="closeRenameModal()" class="flex-1 bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-bold py-2.5 rounded-xl transition-colors">Cancel</button>
+                <button onclick="confirmRename()" class="flex-1 bg-accent hover:bg-indigo-500 text-white text-sm font-bold py-2.5 rounded-xl transition-colors">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== NOTEBOOK SETTINGS MODAL ===================== -->
+    <div id="settings-modal" class="hidden-item fixed inset-0 bg-black/60 modal-backdrop z-50 items-center justify-center p-4">
+        <div class="bg-darkCard border border-white/10 rounded-2xl w-full max-w-md p-6 pop-in">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg font-bold text-white">Notebook Settings</h3>
+                <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="flex flex-col gap-3">
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Title</label>
+                    <input id="settings-title-input" type="text" class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 mb-1 block">Description</label>
+                    <textarea id="settings-desc-input" rows="2" class="w-full bg-darkBg border border-white/10 rounded-xl py-2.5 px-3 text-sm text-white focus:outline-none focus:border-accent resize-none"></textarea>
+                </div>
+                <button onclick="saveNotebookSettings()" class="bg-accent hover:bg-indigo-500 text-white text-sm font-bold py-2.5 rounded-xl transition-colors mt-1">Save Changes</button>
+                <button onclick="deleteNotebookConfirm()" class="bg-danger/10 hover:bg-danger/20 border border-danger/30 text-danger text-sm font-bold py-2.5 rounded-xl transition-colors"><i class="fa-solid fa-trash mr-1"></i> Delete Notebook</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===================== CONFIG / STATE =====================
+        const USER_ID = 'Skydrop';
+        const NOTEBOOK_ID = {{ notebook_id | tojson }};
+
+        let notebook = null;
+        let folders = [];
+        let items = [];
+        let currentFolderId = null;     // null = root
+        let searchQuery = '';
+        let dragPayload = null;         // { id, kind: 'folder' | 'item' }
+        let activeNoteItemId = null;    // id of note currently open in the panel (null = new)
+        let selectedLinkKind = 'video';
+        let renameTarget = null;        // { id, kind }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            pickLinkKind('video');
+            loadAll();
+        });
+
+        async function loadAll() {
+            await Promise.all([loadNotebookMeta(), loadFolders(), loadItems()]);
+            render();
+        }
+
+        // ===================== LOAD =====================
+        async function loadNotebookMeta() {
+            try {
+                const res = await fetch(`/api/smartnotebook/notebooks/${NOTEBOOK_ID}?user_id=${USER_ID}`);
+                const json = await res.json();
+                notebook = json.data;
+                renderHero();
+            } catch (e) { console.error('loadNotebookMeta', e); }
+        }
+
+        async function loadFolders() {
+            try {
+                const res = await fetch(`/api/smartnotebook/notebooks/${NOTEBOOK_ID}/folders?user_id=${USER_ID}`);
+                const json = await res.json();
+                folders = json.data || [];
+            } catch (e) { console.error('loadFolders', e); folders = []; }
+        }
+
+        async function loadItems() {
+            try {
+                const res = await fetch(`/api/smartnotebook/notebooks/${NOTEBOOK_ID}/items?user_id=${USER_ID}`);
+                const json = await res.json();
+                items = json.data || [];
+            } catch (e) { console.error('loadItems', e); items = []; }
+        }
+
+        // ===================== HERO / BREADCRUMBS =====================
+        function renderHero() {
+            if (!notebook) return;
+            document.getElementById('hero-icon').className = 'w-16 h-16 rounded-2xl flex items-center justify-center text-2xl shrink-0';
+            document.getElementById('hero-icon').style.background = notebook.color + '22';
+            document.getElementById('hero-icon').style.color = notebook.color;
+            document.getElementById('hero-icon').style.border = `1px solid ${notebook.color}44`;
+            document.getElementById('hero-icon').innerHTML = `<i class="${notebook.icon}"></i>`;
+            document.getElementById('hero-title').textContent = notebook.title;
+            document.getElementById('hero-desc').textContent = notebook.description || 'No description yet.';
+            document.getElementById('header-nb-name').textContent = notebook.title;
+            document.getElementById('sidebar-nb-title').innerHTML = `<i class="fa-solid fa-angle-right text-xs"></i> <span class="truncate">${escapeHtml(notebook.title)}</span>`;
+            document.title = `${notebook.title} - StudyOS`;
+        }
+
+        function folderPath(folderId) {
+            const path = [];
+            let cur = folderId;
+            while (cur) {
+                const f = folders.find(x => x._id === cur);
+                if (!f) break;
+                path.unshift(f);
+                cur = f.parentId || null;
+            }
+            return path;
+        }
+
+        function renderBreadcrumbs() {
+            const el = document.getElementById('breadcrumbs');
+            const path = folderPath(currentFolderId);
+            let html = `<span class="crumb-folder hover:text-white font-medium ${!currentFolderId ? 'text-white' : ''}" onclick="navigateToFolder(null)"><i class="fa-solid fa-house text-xs mr-1"></i>${notebook ? escapeHtml(notebook.title) : 'Notebook'}</span>`;
+            path.forEach((f, idx) => {
+                const isLast = idx === path.length - 1;
+                html += `<i class="fa-solid fa-chevron-right text-[10px] mx-1 text-gray-600"></i><span class="crumb-folder hover:text-white ${isLast ? 'text-white font-medium' : ''}" onclick="navigateToFolder('${f._id}')">${escapeHtml(f.name)}</span>`;
+            });
+            el.innerHTML = html;
+        }
+
+        function navigateToFolder(folderId) {
+            currentFolderId = folderId;
+            searchQuery = '';
+            document.getElementById('search-input').value = '';
+            render();
+        }
+
+        // ===================== MAIN RENDER =====================
+        function render() {
+            renderBreadcrumbs();
+
+            const isSearching = searchQuery.trim().length > 0;
+            const foldersSection = document.getElementById('folders-section');
+            const itemsSection = document.getElementById('items-section');
+            const emptyState = document.getElementById('empty-state');
+
+            let visibleFolders = [];
+            let visibleItems = [];
+
+            if (isSearching) {
+                const q = searchQuery.toLowerCase();
+                visibleFolders = folders.filter(f => f.name.toLowerCase().includes(q));
+                visibleItems = items.filter(it => it.name.toLowerCase().includes(q));
+                foldersSection.classList.toggle('hidden-item', visibleFolders.length === 0);
+                document.querySelector('#items-section h3').textContent = `Search results for "${searchQuery}"`;
+            } else {
+                visibleFolders = folders.filter(f => (f.parentId || null) === currentFolderId);
+                visibleItems = items.filter(it => (it.folderId || null) === currentFolderId);
+                foldersSection.classList.toggle('hidden-item', visibleFolders.length === 0);
+                document.querySelector('#items-section h3').textContent = 'Items';
+            }
+
+            renderFolders(visibleFolders);
+            renderItems(visibleItems);
+
+            const nothing = visibleFolders.length === 0 && visibleItems.length === 0;
+            emptyState.classList.toggle('hidden-item', !nothing);
+            emptyState.classList.toggle('flex', nothing);
+            itemsSection.classList.toggle('hidden-item', nothing && !isSearching ? false : (visibleItems.length === 0 && !isSearching === false ? false : visibleItems.length === 0));
+            itemsSection.classList.toggle('hidden-item', visibleItems.length === 0);
+        }
+
+        function onSearchInput() {
+            searchQuery = document.getElementById('search-input').value;
+            render();
+        }
+
+        // ===================== FOLDERS RENDER =====================
+        function renderFolders(list) {
+            const grid = document.getElementById('folders-grid');
+            if (!list.length) { grid.innerHTML = ''; return; }
+            grid.innerHTML = list.map(f => {
+                const childCount = items.filter(it => (it.folderId || null) === f._id).length
+                    + folders.filter(sub => (sub.parentId || null) === f._id).length;
+                return `
+                <div class="item-card group relative bg-darkCard border border-white/5 hover:border-accent/40 rounded-xl p-4 flex items-center gap-3 cursor-pointer"
+                     draggable="true"
+                     ondragstart="onDragStart(event, '${f._id}', 'folder')"
+                     ondragover="onCardDragOver(event)" ondragleave="onCardDragLeave(event)"
+                     ondrop="onFolderDrop(event, '${f._id}')"
+                     onclick="navigateToFolder('${f._id}')">
+                    <div class="w-10 h-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center text-lg shrink-0"><i class="fa-solid fa-folder"></i></div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-semibold text-white truncate">${escapeHtml(f.name)}</p>
+                        <p class="text-[11px] text-gray-500">${childCount} item${childCount === 1 ? '' : 's'}</p>
+                    </div>
+                    <button onclick="event.stopPropagation(); openItemMenu(event, '${f._id}', 'folder')" class="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white p-1 transition-opacity shrink-0"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                </div>`;
+            }).join('');
+        }
+
+        // ===================== ITEMS RENDER =====================
+        function itemVisual(it) {
+            if (it.itemType === 'note') return { icon: 'fa-regular fa-note-sticky', color: '#F59E0B', label: 'Note' };
+            if (it.itemType === 'link') {
+                if (it.linkKind === 'video') return { icon: 'fa-brands fa-youtube', color: '#EF4444', label: 'Video' };
+                if (it.linkKind === 'article') return { icon: 'fa-regular fa-newspaper', color: '#3B82F6', label: 'Article' };
+                return { icon: 'fa-solid fa-link', color: '#06B6D4', label: 'Link' };
+            }
+            // file
+            const mime = (it.mimeType || '').toLowerCase();
+            const name = (it.name || '').toLowerCase();
+            if (mime.includes('pdf') || name.endsWith('.pdf')) return { icon: 'fa-solid fa-file-pdf', color: '#EF4444', label: 'PDF' };
+            if (mime.includes('presentation') || name.endsWith('.ppt') || name.endsWith('.pptx')) return { icon: 'fa-solid fa-file-powerpoint', color: '#F97316', label: 'Slides' };
+            if (mime.includes('word') || name.endsWith('.doc') || name.endsWith('.docx')) return { icon: 'fa-solid fa-file-word', color: '#3B82F6', label: 'Doc' };
+            if (mime.includes('sheet') || name.endsWith('.xls') || name.endsWith('.xlsx') || name.endsWith('.csv')) return { icon: 'fa-solid fa-file-excel', color: '#22C55E', label: 'Sheet' };
+            if (mime.startsWith('image/')) return { icon: 'fa-solid fa-file-image', color: '#A855F7', label: 'Image' };
+            if (mime.startsWith('video/')) return { icon: 'fa-solid fa-file-video', color: '#EC4899', label: 'Video' };
+            if (mime.startsWith('audio/')) return { icon: 'fa-solid fa-file-audio', color: '#10B981', label: 'Audio' };
+            if (mime.includes('zip') || name.endsWith('.zip') || name.endsWith('.rar')) return { icon: 'fa-solid fa-file-zipper', color: '#84CC16', label: 'Archive' };
+            return { icon: 'fa-solid fa-file', color: '#9CA3AF', label: 'File' };
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes && bytes !== 0) return '';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function renderItems(list) {
+            const grid = document.getElementById('items-grid');
+            if (!list.length) { grid.innerHTML = ''; return; }
+            grid.innerHTML = list.map(it => {
+                const v = itemVisual(it);
+                const meta = it.itemType === 'file' ? formatBytes(it.size) : (it.itemType === 'link' ? (it.url || '').replace(/^https?:\/\//, '').slice(0, 40) : 'Note');
+                return `
+                <div class="item-card group relative bg-darkCard border border-white/5 hover:border-white/20 rounded-xl p-4 flex flex-col cursor-pointer"
+                     draggable="true"
+                     ondragstart="onDragStart(event, '${it._id}', 'item')"
+                     onclick="openItem('${it._id}')">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0" style="background:${v.color}1a; color:${v.color};"><i class="${v.icon}"></i></div>
+                        <button onclick="event.stopPropagation(); openItemMenu(event, '${it._id}', 'item')" class="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white p-1 transition-opacity shrink-0"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                    </div>
+                    <p class="text-sm font-semibold text-white truncate mb-1">${escapeHtml(it.name)}</p>
+                    <p class="text-[11px] text-gray-500 truncate">${escapeHtml(meta)}</p>
+                    <span class="text-[10px] font-bold mt-3 self-start px-2 py-0.5 rounded-md" style="background:${v.color}1a; color:${v.color};">${v.label}</span>
+                </div>`;
+            }).join('');
+        }
+
+        // ===================== ADD MENU =====================
+        function toggleAddMenu(e) {
+            e.stopPropagation();
+            document.getElementById('add-menu').classList.toggle('hidden-item');
+        }
+        function closeAddMenu() { document.getElementById('add-menu').classList.add('hidden-item'); }
+
+        // ===================== CONTEXT MENU (per item/folder) =====================
+        function openItemMenu(e, id, kind) {
+            e.stopPropagation();
+            closeAllMenus();
+            const menu = document.createElement('div');
+            menu.className = 'context-menu fixed z-50 bg-darkCard border border-white/10 rounded-xl shadow-2xl py-2 w-44 text-sm';
+            menu.style.left = Math.min(e.clientX, window.innerWidth - 190) + 'px';
+            menu.style.top = e.clientY + 'px';
+            menu.innerHTML = `
+                <button class="w-full text-left px-4 py-2 text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-2" onclick="event.stopPropagation(); closeAllMenus(); startRename('${id}','${kind}')"><i class="fa-solid fa-pen w-4 text-xs"></i> Rename</button>
+                <button class="w-full text-left px-4 py-2 text-danger hover:bg-danger/10 flex items-center gap-2" onclick="event.stopPropagation(); closeAllMenus(); deleteEntity('${id}','${kind}')"><i class="fa-solid fa-trash w-4 text-xs"></i> Delete</button>
+            `;
+            document.body.appendChild(menu);
+        }
+
+        function closeAllMenus(e) {
+            if (e && e.target && e.target.closest && e.target.closest('#add-menu')) return;
+            document.querySelectorAll('.context-menu').forEach(el => el.remove());
+            if (!e || !(e.target && e.target.closest && e.target.closest('#add-menu'))) {
+                const addMenu = document.getElementById('add-menu');
+                if (addMenu && e && !e.target.closest('button[onclick^="toggleAddMenu"]')) addMenu.classList.add('hidden-item');
+            }
+        }
+
+        // ===================== NEW FOLDER =====================
+        function openNewFolderPrompt() {
+            renameTarget = { id: null, kind: 'new-folder' };
+            document.getElementById('rename-title').textContent = 'New Folder';
+            document.getElementById('rename-input').value = '';
+            document.getElementById('rename-input').placeholder = 'Folder name';
+            document.getElementById('rename-modal').classList.remove('hidden-item');
+            document.getElementById('rename-modal').classList.add('flex');
+            setTimeout(() => document.getElementById('rename-input').focus(), 50);
+        }
+
+        // ===================== RENAME MODAL (shared for new folder + rename) =====================
+        function startRename(id, kind) {
+            renameTarget = { id, kind };
+            const entity = kind === 'folder' ? folders.find(f => f._id === id) : items.find(it => it._id === id);
+            if (!entity) return;
+            document.getElementById('rename-title').textContent = 'Rename';
+            document.getElementById('rename-input').value = entity.name;
+            document.getElementById('rename-input').placeholder = 'Name';
+            document.getElementById('rename-modal').classList.remove('hidden-item');
+            document.getElementById('rename-modal').classList.add('flex');
+            setTimeout(() => { document.getElementById('rename-input').focus(); document.getElementById('rename-input').select(); }, 50);
+        }
+
+        function closeRenameModal() {
+            document.getElementById('rename-modal').classList.add('hidden-item');
+            document.getElementById('rename-modal').classList.remove('flex');
+            renameTarget = null;
+        }
+
+        async function confirmRename() {
+            const value = document.getElementById('rename-input').value.trim();
+            if (!value || !renameTarget) { closeRenameModal(); return; }
+
+            try {
+                if (renameTarget.kind === 'new-folder') {
+                    await fetch(`/api/smartnotebook/notebooks/${NOTEBOOK_ID}/folders?user_id=${USER_ID}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: value, parent_id: currentFolderId })
+                    });
+                } else if (renameTarget.kind === 'folder') {
+                    await fetch(`/api/smartnotebook/folders/${renameTarget.id}?user_id=${USER_ID}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: value })
+                    });
+                } else if (renameTarget.kind === 'item') {
+                    await fetch(`/api/smartnotebook/items/${renameTarget.id}?user_id=${USER_ID}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: value })
+                    });
+                }
+            } catch (e) { console.error('confirmRename', e); }
+
+            closeRenameModal();
+            await loadAll();
+        }
+
+        document.getElementById('rename-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') confirmRename();
+            if (e.key === 'Escape') closeRenameModal();
+        });
+
+        // ===================== DELETE =====================
+        async function deleteEntity(id, kind) {
+            if (!confirm(`Delete this ${kind === 'folder' ? 'folder and everything inside it' : 'item'}? This cannot be undone.`)) return;
+            try {
+                if (kind === 'folder') {
+                    await fetch(`/api/smartnotebook/folders/${id}?user_id=${USER_ID}`, { method: 'DELETE' });
+                } else {
+                    await fetch(`/api/smartnotebook/items/${id}?user_id=${USER_ID}`, { method: 'DELETE' });
+                }
+            } catch (e) { console.error('deleteEntity', e); }
+            await loadAll();
+        }
+
+        // ===================== NOTE PANEL =====================
+        function openNoteModal() {
+            activeNoteItemId = null;
+            document.getElementById('note-name-input').value = '';
+            document.getElementById('note-content-input').value = '';
+            showNotePanel();
+        }
+
+        function openExistingNote(item) {
+            activeNoteItemId = item._id;
+            document.getElementById('note-name-input').value = item.name || '';
+            document.getElementById('note-content-input').value = item.content || '';
+            showNotePanel();
+        }
+
+        function showNotePanel() {
+            document.getElementById('note-overlay').classList.remove('hidden-item');
+            document.getElementById('note-panel').classList.remove('hidden-item');
+            setTimeout(() => document.getElementById('note-name-input').focus(), 50);
+        }
+
+        function closeNoteModal() {
+            document.getElementById('note-overlay').classList.add('hidden-item');
+            document.getElementById('note-panel').classList.add('hidden-item');
+            activeNoteItemId = null;
+        }
+
+        async function saveNote() {
+            const name = document.getElementById('note-name-input').value.trim() || 'Untitled note';
+            const content = document.getElementById('note-content-input').value;
+            const btn = document.getElementById('note-save-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving…';
+            try {
+                if (activeNoteItemId) {
+                    await fetch(`/api/smartnotebook/items/${activeNoteItemId}?user_id=${USER_ID}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, content })
+                    });
+                } else {
+                    await fetch(`/api/smartnotebook/notebooks/${NOTEBOOK_ID}/items/note?user_id=${USER_ID}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, content, folder_id: currentFolderId })
+                    });
+                }
+            } catch (e) { console.error('saveNote', e); }
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save';
+            closeNoteModal();
+            await loadAll();
+        }
+
+        // ===================== LINK MODAL =====================
+        function openLinkModal() {
+            document.getElementById('link-form').reset();
+            pickLinkKind('video');
+            document.getElementById('link-modal').classList.remove('hidden-item');
+            document.getElementById('link-modal').classList.add('flex');
+            setTimeout(() => document.getElementById('link-url-input').focus(), 50);
+        }
+        function closeLinkModal() {
+            document.getElementById('link-modal').classList.add('hidden-item');
+            document.getElementById('link-modal').classList.remove('flex');
+        }
+        function pickLinkKind(kind) {
+            selectedLinkKind = kind;
+            document.querySelectorAll('.link-kind-pill').forEach(btn => {
+                const active = btn.dataset.kind === kind;
+                btn.className = `link-kind-pill flex-1 text-xs font-bold py-2 rounded-lg border transition-colors ${active ? 'border-accent/40 bg-accent/10 text-accent' : 'border-white/10 text-gray-400'}`;
+            });
+        }
+        document.getElementById('link-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const url = document.getElementById('link-url-input').value.trim();
+            if (!url) return;
+            let name = document.getElementById('link-name-input').value.trim();
+            if (!name) { try { name = new URL(url).hostname.replace('www.', ''); } catch { name = url; } }
+            try {
+                await fetch(`/api/smartnotebook/notebooks/${NOTEBOOK_ID}/items/link?user_id=${USER_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, url, link_kind: selectedLinkKind, folder_id: currentFolderId })
+                });
+            } catch (e) { console.error('save link', e); }
+            closeLinkModal();
+            await loadAll();
+        });
+
+        // ===================== FILE UPLOAD =====================
+        function triggerFileUpload() { document.getElementById('file-input').click(); }
+
+        async function handleFileInputChange(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            await uploadFile(file);
+            e.target.value = '';
+        }
+
+        async function uploadFile(file) {
+            if (file.size > 25 * 1024 * 1024) { alert('File too large. Max size is 25MB.'); return; }
+            const formData = new FormData();
+            formData.append('file', file);
+            if (currentFolderId) formData.append('folder_id', currentFolderId);
+            try {
+                const res = await fetch(`/api/smartnotebook/notebooks/${NOTEBOOK_ID}/items/file?user_id=${USER_ID}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    throw new Error(json.detail || 'Upload failed');
+                }
+            } catch (e) {
+                console.error('uploadFile', e);
+                alert('Could not upload file: ' + e.message);
+            }
+            await loadAll();
+        }
+
+        // ===================== DRAG & DROP (upload + move) =====================
+        function onZoneDragOver(e) {
+            if (e.dataTransfer.types.includes('Files')) {
+                e.preventDefault();
+                document.getElementById('drop-zone').classList.add('drag-over-zone');
+            }
+        }
+        function onZoneDragLeave(e) {
+            document.getElementById('drop-zone').classList.remove('drag-over-zone');
+        }
+        async function onZoneDrop(e) {
+            e.preventDefault();
+            document.getElementById('drop-zone').classList.remove('drag-over-zone');
+            const files = e.dataTransfer.files;
+            if (files && files.length) {
+                for (const file of files) await uploadFile(file);
+            }
+        }
+
+        function onDragStart(e, id, kind) {
+            dragPayload = { id, kind };
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        function onCardDragOver(e) {
+            if (dragPayload) { e.preventDefault(); e.currentTarget.classList.add('dropzone-active'); }
+        }
+        function onCardDragLeave(e) { e.currentTarget.classList.remove('dropzone-active'); }
+
+        async function onFolderDrop(e, targetFolderId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dropzone-active');
+            if (!dragPayload || dragPayload.id === targetFolderId) { dragPayload = null; return; }
+            try {
+                if (dragPayload.kind === 'item') {
+                    await fetch(`/api/smartnotebook/items/${dragPayload.id}?user_id=${USER_ID}`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ folder_id: targetFolderId })
+                    });
+                } else if (dragPayload.kind === 'folder') {
+                    await fetch(`/api/smartnotebook/folders/${dragPayload.id}?user_id=${USER_ID}`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ parent_id: targetFolderId })
+                    });
+                }
+            } catch (e) { console.error('onFolderDrop', e); }
+            dragPayload = null;
+            await loadAll();
+        }
+
+        // allow dropping onto breadcrumb root/folders too
+        document.getElementById('breadcrumbs').addEventListener('dragover', (e) => {
+            if (dragPayload) e.preventDefault();
+        });
+
+        // ===================== OPEN ITEM (preview / edit) =====================
+        function openItem(itemId) {
+            const it = items.find(x => x._id === itemId);
+            if (!it) return;
+
+            if (it.itemType === 'note') { openExistingNote(it); return; }
+
+            if (it.itemType === 'link') {
+                openPreview(it, `
+                    <div class="flex flex-col items-center text-center py-6">
+                        <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-4" style="background:#06b6d41a; color:#06b6d4;"><i class="fa-solid fa-link"></i></div>
+                        <p class="text-white font-bold mb-1">${escapeHtml(it.name)}</p>
+                        <p class="text-xs text-gray-500 mb-5 break-all">${escapeHtml(it.url)}</p>
+                        <a href="${it.url}" target="_blank" rel="noopener" class="bg-accent hover:bg-indigo-500 text-white text-sm font-bold py-2.5 px-6 rounded-xl transition-colors"><i class="fa-solid fa-arrow-up-right-from-square mr-2"></i> Open Link</a>
+                    </div>
+                `, null);
+                return;
+            }
+
+            // file
+            const v = itemVisual(it);
+            const mime = (it.mimeType || '').toLowerCase();
+            const downloadUrl = `/api/smartnotebook/items/${it._id}/download?user_id=${USER_ID}`;
+            let body;
+            if (mime.startsWith('image/')) {
+                body = `<img src="${downloadUrl}" class="max-w-full rounded-xl mx-auto" alt="${escapeHtml(it.name)}">`;
+            } else if (mime === 'application/pdf') {
+                body = `<iframe src="${downloadUrl}" class="w-full h-[60vh] rounded-xl border border-white/10"></iframe>`;
+            } else if (mime.startsWith('video/')) {
+                body = `<video src="${downloadUrl}" controls class="w-full rounded-xl"></video>`;
+            } else if (mime.startsWith('audio/')) {
+                body = `<audio src="${downloadUrl}" controls class="w-full mt-10"></audio>`;
+            } else {
+                body = `
+                    <div class="flex flex-col items-center text-center py-10">
+                        <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-4" style="background:${v.color}1a; color:${v.color};"><i class="${v.icon}"></i></div>
+                        <p class="text-white font-bold mb-1">${escapeHtml(it.name)}</p>
+                        <p class="text-xs text-gray-500 mb-5">${formatBytes(it.size)} • ${escapeHtml(it.mimeType || 'Unknown type')}</p>
+                        <p class="text-xs text-gray-600">Preview isn't available for this file type. Use download to view it.</p>
+                    </div>
+                `;
+            }
+            openPreview(it, body, downloadUrl);
+        }
+
+        function openPreview(it, bodyHtml, downloadUrl) {
+            document.getElementById('preview-title').textContent = it.name;
+            document.getElementById('preview-body').innerHTML = bodyHtml;
+            const dlBtn = document.getElementById('preview-download-btn');
+            if (downloadUrl) {
+                dlBtn.classList.remove('hidden-item');
+                dlBtn.onclick = () => window.open(downloadUrl, '_blank');
+            } else {
+                dlBtn.classList.add('hidden-item');
+            }
+            document.getElementById('preview-modal').classList.remove('hidden-item');
+            document.getElementById('preview-modal').classList.add('flex');
+        }
+
+        function closePreviewModal() {
+            document.getElementById('preview-modal').classList.add('hidden-item');
+            document.getElementById('preview-modal').classList.remove('flex');
+            document.getElementById('preview-body').innerHTML = '';
+        }
+
+        document.getElementById('preview-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'preview-modal') closePreviewModal();
+        });
+        document.getElementById('link-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'link-modal') closeLinkModal();
+        });
+
+        // ===================== NOTEBOOK SETTINGS =====================
+        function openNotebookSettings() {
+            if (!notebook) return;
+            document.getElementById('settings-title-input').value = notebook.title;
+            document.getElementById('settings-desc-input').value = notebook.description || '';
+            document.getElementById('settings-modal').classList.remove('hidden-item');
+            document.getElementById('settings-modal').classList.add('flex');
+        }
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden-item');
+            document.getElementById('settings-modal').classList.remove('flex');
+        }
+        async function saveNotebookSettings() {
+            const title = document.getElementById('settings-title-input').value.trim();
+            if (!title) return;
+            const description = document.getElementById('settings-desc-input').value.trim();
+            try {
+                await fetch(`/api/smartnotebook/notebooks/${NOTEBOOK_ID}?user_id=${USER_ID}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description })
+                });
+            } catch (e) { console.error('saveNotebookSettings', e); }
+            closeSettingsModal();
+            await loadNotebookMeta();
+        }
+        async function deleteNotebookConfirm() {
+            if (!confirm('Delete this entire notebook, including all folders and files inside it? This cannot be undone.')) return;
+            try {
+                await fetch(`/api/smartnotebook/notebooks/${NOTEBOOK_ID}?user_id=${USER_ID}`, { method: 'DELETE' });
+                window.location.href = '/hub';
+            } catch (e) { console.error('deleteNotebook', e); }
+        }
+        document.getElementById('settings-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'settings-modal') closeSettingsModal();
+        });
+
+        // ===================== UTIL =====================
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+        }
+    </script>
+</body>
+</html>

@@ -62,6 +62,9 @@
                 <a href="/cruncher" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium transition-colors">
                     <i class="fa-solid fa-bolt w-5 text-accent"></i> Content Cruncher
                 </a>
+                <button onclick="openHistory()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors text-left">
+                    <i class="fa-solid fa-clock-rotate-left w-5"></i> History
+                </button>
                 <a href="/hub" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
                     <i class="fa-solid fa-layer-group w-5"></i> Study Hub
                 </a>
@@ -85,8 +88,13 @@
                     <p class="text-xs text-gray-500 mt-0.5">AI-powered study material generator</p>
                 </div>
             </div>
-            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-accent to-purple-500 p-[2px]">
-                <img src="https://ui-avatars.com/api/?name=Rishikesh&background=111827&color=fff" class="w-full h-full rounded-full">
+            <div class="flex items-center gap-3">
+                <button onclick="openHistory()" title="History" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors">
+                    <i class="fa-solid fa-clock-rotate-left text-sm"></i>
+                </button>
+                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-accent to-purple-500 p-[2px]">
+                    <img src="https://ui-avatars.com/api/?name=Rishikesh&background=111827&color=fff" class="w-full h-full rounded-full">
+                </div>
             </div>
         </header>
 
@@ -253,9 +261,14 @@
                                 <h3 class="text-sm font-bold text-white flex items-center gap-2">
                                     <i class="fa-solid fa-sparkles text-accent"></i> AI Results
                                 </h3>
-                                <button onclick="document.getElementById('ai-results-box').classList.add('hidden')" class="text-gray-500 hover:text-white text-xs transition-colors">
-                                    <i class="fa-solid fa-xmark"></i>
-                                </button>
+                                <div class="flex items-center gap-3">
+                                    <button onclick="exportCurrentResult()" title="Export as Word document" class="text-gray-400 hover:text-accent text-xs flex items-center gap-1.5 transition-colors">
+                                        <i class="fa-solid fa-file-export"></i> Export
+                                    </button>
+                                    <button onclick="document.getElementById('ai-results-box').classList.add('hidden')" class="text-gray-500 hover:text-white text-xs transition-colors">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="overflow-y-auto p-5">
                                 <div id="ai-json-output"></div>
@@ -282,7 +295,69 @@
         </div>
     </main>
 
+    <!-- History Modal -->
+    <div id="history-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-darkCard border border-white/10 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="flex items-center justify-between p-5 border-b border-white/5 shrink-0">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-accent"></i> History
+                </h3>
+                <button onclick="closeHistory()" class="text-gray-500 hover:text-white text-sm transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Filter tabs -->
+            <div class="flex gap-2 px-5 pt-4 shrink-0">
+                <button class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent/15 text-accent border border-accent/30" data-filter="" onclick="filterHistory('', this)">All</button>
+                <button class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 text-gray-400 border border-white/10" data-filter="video" onclick="filterHistory('video', this)">
+                    <i class="fa-brands fa-youtube text-red-400"></i> Video
+                </button>
+                <button class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 text-gray-400 border border-white/10" data-filter="document" onclick="filterHistory('document', this)">
+                    <i class="fa-solid fa-file-pdf text-blue-400"></i> Document
+                </button>
+                <button class="hist-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 text-gray-400 border border-white/10" data-filter="text" onclick="filterHistory('text', this)">
+                    <i class="fa-solid fa-align-left text-green-400"></i> Text
+                </button>
+            </div>
+
+            <div id="history-list" class="flex-1 overflow-y-auto p-5">
+                <p class="text-xs text-gray-500 text-center py-10">Loading history...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Entry Detail Modal -->
+    <div id="history-detail-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div class="bg-darkCard border border-white/10 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="flex items-center justify-between p-5 border-b border-white/5 shrink-0">
+                <h3 id="history-detail-title" class="text-sm font-bold text-white flex items-center gap-2 truncate pr-3">
+                    <i class="fa-solid fa-file-lines text-accent"></i> <span>Entry</span>
+                </h3>
+                <div class="flex items-center gap-3 shrink-0">
+                    <button id="history-detail-export-btn" onclick="exportHistoryEntry()" title="Export as Word document" class="text-gray-400 hover:text-accent text-xs flex items-center gap-1.5 transition-colors">
+                        <i class="fa-solid fa-file-export"></i> Export
+                    </button>
+                    <button onclick="closeHistoryDetail()" class="text-gray-500 hover:text-white text-xs transition-colors">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-y-auto p-5">
+                <div id="history-detail-output"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // ── State for export/history ───────────────────────────────────
+        let currentResult = null;
+        let currentSourceType = 'text';
+        let currentSourceLabel = '';
+        let historyEntries = [];
+        let activeHistoryFilter = '';
+        let viewingHistoryEntryId = null;
+
         // ── Tab switching ──────────────────────────────────────────────
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => {
@@ -433,6 +508,13 @@
                     setStep(3);
                     setStatus(`Done! Generated: ${Object.keys(result.data).join(', ')}`, 'done');
                     setProgress(false);
+                    currentResult = result.data;
+                    currentSourceType = activeTab === 'content-youtube' ? 'video' : (activeTab === 'content-pdf' ? 'document' : 'text');
+                    currentSourceLabel = activeTab === 'content-youtube'
+                        ? document.getElementById('yt-url').value.trim()
+                        : (activeTab === 'content-pdf'
+                            ? (document.getElementById('pdf-upload').files[0]?.name || 'document')
+                            : document.getElementById('text-input').value.trim().slice(0, 80));
                     renderResults(result.data);
                 } else {
                     const errMsg = result.detail || result.message || 'Unknown error occurred.';
@@ -458,6 +540,10 @@
             container.innerHTML = '';
             box.classList.remove('hidden');
             document.getElementById('tips-card').classList.add('hidden');
+            renderResultsInto(container, data);
+        }
+
+        function renderResultsInto(container, data) {
 
             // Summary
             if (data.summary) {
@@ -590,6 +676,186 @@
             } else {
                 fb.textContent = `✗ Wrong. Answer: ${correct}`;
                 fb.className = 'quiz-fb text-xs mt-1 font-semibold text-danger';
+            }
+        }
+
+        // ── Export current (just-generated) result as .docx ─────────────
+        async function exportCurrentResult() {
+            if (!currentResult) {
+                setStatus('Nothing to export yet — generate something first.', 'error');
+                return;
+            }
+            try {
+                const res = await fetch('/api/crunch/export-docx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        source_label: currentSourceLabel || 'StudyOS Content',
+                        source_type: currentSourceType,
+                        result: currentResult
+                    })
+                });
+                if (!res.ok) throw new Error('Export failed.');
+                const blob = await res.blob();
+                downloadBlob(blob, 'studyos_export.docx');
+            } catch (err) {
+                setStatus('Export error: ' + err.message, 'error');
+            }
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // ── History modal ─────────────────────────────────────────────
+        function sourceIcon(type) {
+            if (type === 'video') return '<i class="fa-brands fa-youtube text-red-400"></i>';
+            if (type === 'document') return '<i class="fa-solid fa-file-pdf text-blue-400"></i>';
+            return '<i class="fa-solid fa-align-left text-green-400"></i>';
+        }
+
+        function fmtDate(iso) {
+            try {
+                const d = new Date(iso);
+                return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+            } catch { return iso; }
+        }
+
+        function resultBadges(result) {
+            const badges = [];
+            if (result?.summary) badges.push('<span class="text-[10px] px-2 py-0.5 rounded-full bg-accent/15 text-accent">Summary</span>');
+            if (result?.flashcards?.length) badges.push(`<span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400">${result.flashcards.length} Flashcards</span>`);
+            if (result?.quiz_questions?.length) badges.push(`<span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400">${result.quiz_questions.length} Quiz Qs</span>`);
+            if (result?.mind_map) badges.push('<span class="text-[10px] px-2 py-0.5 rounded-full bg-green-500/15 text-green-400">Mind Map</span>');
+            return badges.join(' ');
+        }
+
+        async function openHistory() {
+            document.getElementById('history-modal').classList.remove('hidden');
+            await loadHistory();
+        }
+
+        function closeHistory() {
+            document.getElementById('history-modal').classList.add('hidden');
+        }
+
+        function filterHistory(type, btnEl) {
+            activeHistoryFilter = type;
+            document.querySelectorAll('.hist-filter-btn').forEach(b => {
+                b.classList.remove('bg-accent/15', 'text-accent', 'border-accent/30');
+                b.classList.add('bg-white/5', 'text-gray-400', 'border-white/10');
+            });
+            btnEl.classList.remove('bg-white/5', 'text-gray-400', 'border-white/10');
+            btnEl.classList.add('bg-accent/15', 'text-accent', 'border-accent/30');
+            renderHistoryList();
+        }
+
+        async function loadHistory() {
+            const listEl = document.getElementById('history-list');
+            listEl.innerHTML = '<p class="text-xs text-gray-500 text-center py-10">Loading history...</p>';
+            try {
+                const res = await fetch('/api/history');
+                const json = await res.json();
+                if (res.ok && json.status === 'success') {
+                    historyEntries = json.data || [];
+                    renderHistoryList();
+                } else {
+                    listEl.innerHTML = `<p class="text-xs text-danger text-center py-10">${json.detail || 'Failed to load history.'}</p>`;
+                }
+            } catch (err) {
+                listEl.innerHTML = `<p class="text-xs text-danger text-center py-10">Network error: ${err.message}</p>`;
+            }
+        }
+
+        function renderHistoryList() {
+            const listEl = document.getElementById('history-list');
+            const filtered = activeHistoryFilter
+                ? historyEntries.filter(e => e.sourceType === activeHistoryFilter)
+                : historyEntries;
+
+            if (!filtered.length) {
+                listEl.innerHTML = '<p class="text-xs text-gray-500 text-center py-10">No history yet. Crunch some content to see it here.</p>';
+                return;
+            }
+
+            listEl.innerHTML = filtered.map(e => `
+                <div class="bg-darkBg border border-white/8 rounded-xl p-4 mb-3 hover:border-accent/30 transition-all cursor-pointer" onclick="viewHistoryEntry('${e._id}')">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-2.5 min-w-0">
+                            <div class="text-base mt-0.5 shrink-0">${sourceIcon(e.sourceType)}</div>
+                            <div class="min-w-0">
+                                <p class="text-sm text-white font-semibold truncate max-w-[420px]">${escHtml(e.sourceLabel || 'Untitled')}</p>
+                                <p class="text-[11px] text-gray-500 mt-0.5">${fmtDate(e.createdAt)}</p>
+                                <div class="flex flex-wrap gap-1.5 mt-2">${resultBadges(e.result)}</div>
+                            </div>
+                        </div>
+                        <button onclick="event.stopPropagation(); deleteHistoryEntry('${e._id}')" title="Delete" class="text-gray-600 hover:text-danger transition-colors shrink-0 p-1.5">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteHistoryEntry(id) {
+            if (!confirm('Delete this history entry? This cannot be undone.')) return;
+            try {
+                const res = await fetch(`/api/history/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    historyEntries = historyEntries.filter(e => e._id !== id);
+                    renderHistoryList();
+                } else {
+                    const json = await res.json();
+                    alert(json.detail || 'Failed to delete.');
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            }
+        }
+
+        async function viewHistoryEntry(id) {
+            try {
+                const res = await fetch(`/api/history/${id}`);
+                const json = await res.json();
+                if (!res.ok || json.status !== 'success') {
+                    alert(json.detail || 'Failed to load entry.');
+                    return;
+                }
+                const entry = json.data;
+                viewingHistoryEntryId = entry._id;
+
+                document.querySelector('#history-detail-title span').textContent = entry.sourceLabel || 'Untitled';
+                const out = document.getElementById('history-detail-output');
+                out.innerHTML = '';
+                renderResultsInto(out, entry.result);
+
+                document.getElementById('history-detail-modal').classList.remove('hidden');
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            }
+        }
+
+        function closeHistoryDetail() {
+            document.getElementById('history-detail-modal').classList.add('hidden');
+            viewingHistoryEntryId = null;
+        }
+
+        async function exportHistoryEntry() {
+            if (!viewingHistoryEntryId) return;
+            try {
+                const res = await fetch(`/api/history/${viewingHistoryEntryId}/export`);
+                if (!res.ok) throw new Error('Export failed.');
+                const blob = await res.blob();
+                downloadBlob(blob, 'studyos_export.docx');
+            } catch (err) {
+                alert('Export error: ' + err.message);
             }
         }
     </script>

@@ -1,12 +1,17 @@
 # app/routes/crunch.py
-"""Routes for the Content Cruncher - YouTube, PDF, and Text AI processing"""
+"""Routes for the Content Cruncher - YouTube, PDF, and Text AI processing.
+Every successful generation is saved to MongoDB history automatically."""
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional
+import io
 import json
 
 router = APIRouter(prefix="/api/crunch", tags=["crunch"])
+
+DEFAULT_USER_ID = "Skydrop"  # single-user app; swap for real auth user_id later
 
 
 class YoutubeRequest(BaseModel):
@@ -19,10 +24,34 @@ class TextRequest(BaseModel):
     options: List[str]
 
 
+class ExportRequest(BaseModel):
+    source_label: str
+    source_type: str
+    result: dict
+
+
 def _run_ai(content_text: str, options: List[str]) -> dict:
     """Run AI engine and return result dict"""
     from app.ai_engine import generate_study_materials
     return generate_study_materials(content_text, options)
+
+
+async def _save_history(source_type: str, source_label: str, options: List[str], result: dict):
+    """Best-effort save to MongoDB history. Never blocks the response on failure."""
+    try:
+        from app.database import get_history_service
+        service = get_history_service()
+        saved = await service.save_entry(
+            user_id=DEFAULT_USER_ID,
+            source_type=source_type,
+            source_label=source_label,
+            options=options,
+            result=result,
+        )
+        return saved
+    except Exception as e:
+        print(f"⚠️  Failed to save history: {str(e)}")
+        return None
 
 
 @router.post("/youtube")
@@ -39,7 +68,13 @@ async def crunch_youtube(req: YoutubeRequest):
         if "error" in result:
             raise HTTPException(status_code=500, detail=result["error"])
 
-        return {"status": "success", "data": result}
+        saved = await _save_history("video", req.url, req.options, result)
+
+        return {
+            "status": "success",
+            "data": result,
+            "history_id": saved.get("_id") if saved else None,
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -72,7 +107,13 @@ async def crunch_pdf(
         if "error" in result:
             raise HTTPException(status_code=500, detail=result["error"])
 
-        return {"status": "success", "data": result}
+        saved = await _save_history("document", file.filename or "document", options_list, result)
+
+        return {
+            "status": "success",
+            "data": result,
+            "history_id": saved.get("_id") if saved else None,
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -91,8 +132,37 @@ async def crunch_text(req: TextRequest):
         if "error" in result:
             raise HTTPException(status_code=500, detail=result["error"])
 
-        return {"status": "success", "data": result}
+        label = req.text.strip()[:80] + ("..." if len(req.text.strip()) > 80 else "")
+        saved = await _save_history("text", label, req.options, result)
+
+        return {
+            "status": "success",
+            "data": result,
+            "history_id": saved.get("_id") if saved else None,
+        }
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/export-docx")
+async def export_docx(req: ExportRequest):
+    """Export a freshly-generated result (not yet saved or already in view) as .docx"""
+    try:
+        from app.docx_exporter import build_export_docx
+
+        docx_bytes = build_export_docx(
+            title="StudyOS Export",
+            source_label=req.source_label,
+            source_type=req.source_type,
+            result=req.result,
+        )
+
+        return StreamingResponse(
+            io.BytesIO(docx_bytes),
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": 'attachment; filename="studyos_export.docx"'},
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
