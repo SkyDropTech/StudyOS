@@ -502,7 +502,14 @@
                 setStatus('Step 2/2 — AI is generating study materials...', 'working');
                 setProgress(true, 'Claude AI is analysing the content...');
 
-                const result = await response.json();
+                let result;
+                const rawText = await response.text();
+                try {
+                    result = JSON.parse(rawText);
+                } catch (_) {
+                    // Server returned non-JSON (e.g. HTML error page)
+                    throw new Error(`Server error (${response.status}): ${rawText.slice(0, 120)}`);
+                }
 
                 if (response.ok && result.status === 'success') {
                     setStep(3);
